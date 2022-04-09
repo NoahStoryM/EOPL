@@ -199,9 +199,30 @@
                          (match vals
                            [`(,val) (cdr (expval->pair val))]
                            [_ (error 'unary-func "Bad args: ~s" vals)])))
+  (let ()
+    (: get-op [-> String Symbol])
+    (define get-op (λ (ad*) (string->symbol (string-append "c" ad* "r"))))
+
+    (void
+     (for/fold ([prevs : (Listof String) '("a" "d")])
+               ([i (in-range 1 4)])
+       (for*/list : (Listof String)
+                  ([curr (in-list '("a" "d"))]
+                   [prev (in-list prevs)])
+         (define now (string-append curr prev))
+         (add-denval! (get-op now)
+                      (expval->denval
+                       (*eval* `(λ (arg)
+                                  (,(get-op curr)
+                                   (,(get-op prev)
+                                    arg)))
+                               (base-env)
+                               (id-cont))))
+         now))))
 
 
-  (add-primitive-proc! 'read (nullary-func read))
+  (add-primitive-proc! 'read    (nullary-func read))
+  (add-primitive-proc! 'newline (nullary-func newline))
 
   (add-primitive-proc! 'display (unary-func display))
   (add-primitive-proc! 'print   (unary-func print))
@@ -210,6 +231,10 @@
   (add-primitive-proc! 'displayln (unary-func displayln))
   (add-primitive-proc! 'println   (unary-func println))
   (add-primitive-proc! 'writeln   (unary-func writeln))
+
+  (add-primitive-proc! 'pretty-display (unary-func pretty-display))
+  (add-primitive-proc! 'pretty-print   (unary-func pretty-print))
+  (add-primitive-proc! 'pretty-write   (unary-func pretty-write))
 
 
   (add-primitive-proc! '=  (binary-arithmetic-relation =))
@@ -265,6 +290,13 @@
                             (λ (recur-func)
                               (f (λ args
                                    (apply (recur-func recur-func) args))))))
+                        (base-env)
+                        (id-cont))))
+
+
+  (add-denval! '*amb*
+               (expval->denval
+                (*eval* '(λ () (raise "amb: Amb tree exhausted!"))
                         (base-env)
                         (id-cont))))
 

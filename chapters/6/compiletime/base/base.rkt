@@ -549,6 +549,12 @@
                         (base-env))))
 
 
+  (add-denval! '*amb*
+               (expval->denval
+                (+eval+ '(λ () (raise "amb: Amb tree exhausted!"))
+                        (base-env))))
+
+
   (add-denval! 'map undefined)
   (add-denval! 'map
                (expval->denval

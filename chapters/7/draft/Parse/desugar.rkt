@@ -141,6 +141,13 @@
 
       ;; reduce
       [`(quote ,_) code]
+      [`(,op ,args ,body-exp)
+       #:when (and (case op
+                     [(lambda λ trace-lambda trace-λ) #t]
+                     [else #f])
+                   ((or/c symbol? (listof? symbol?)) args)
+                   (s-exp? body-exp))
+       `(,op ,args ,(desugar body-exp))]
       [(? list?)
        (map desugar code)]
       [_ code
