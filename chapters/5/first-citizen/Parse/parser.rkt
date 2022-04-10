@@ -75,6 +75,24 @@
                         #t
                         (or ,@(cdr exps)))))]
 
+      ['(amb) (parser '(*amb*))]
+      [`(amb ,exp) #:when (s-exp? exp) (parser exp)]
+      [`(amb ,exps ..2)
+       #:when (s-list? exps)
+       (define amb  (gensym 'amb))
+       (define succ (gensym 'succ))
+       (define fail (gensym 'fail))
+       (parser
+        `(let ([,amb *amb*])
+           (let/cc ,succ
+             ,@(for/list : (Listof S-Exp)
+                         ([exp (in-list exps)])
+                 `(let/cc ,fail
+                    (set! *amb* (λ () (,fail "amb: branch failed!")))
+                    (,succ ,exp)))
+             (set! *amb* ,amb)
+             (*amb*))))]
+
       [`(with-handlers ([,(? s-exp? #{pred-exps : S-List})
                          ,(? s-exp? #{handler-exps : S-List})]
                         ...)

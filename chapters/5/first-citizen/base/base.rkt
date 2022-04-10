@@ -1,7 +1,7 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../Parse/parser.rkt"
+         "../Parse/parse.rkt"
          "../Reference/ref-sig.rkt"
          "../Reference/ref-unit.rkt"
          "../Continuation/cont-sig.rkt"
@@ -22,6 +22,7 @@
          "../Expressions/exp-unit.rkt")
 
 (provide (all-from-out "../types/types.rkt")
+         (all-from-out "../Parse/parse.rkt")
          (all-defined-out))
 
 
@@ -44,7 +45,7 @@
     (: exp Exp)
     (define exp
       (assert (call-with-values
-               (λ () (eval (parser code) eval-ns))
+               (λ () (eval (parse code) eval-ns))
                (λ args (car args)))
               exp?))
 
@@ -137,7 +138,22 @@
   (: add-primitive-proc! [-> Symbol [-> DenVal * ExpVal] Void])
   (define add-primitive-proc!
     (λ (op-name op-val)
-      (base-env (extend-env op-name (primitive-proc op-val) (base-env)))))
+      (add-denval! op-name (primitive-proc op-val))))
+
+  (: add-denval! [-> Symbol DenVal Void])
+  (define add-denval!
+    (λ (name val)
+      #;(displayln name)
+      (if (has-binding? (base-env) name)
+          (set-binding! (base-env) name val)
+          (base-env (extend-env name val (base-env))))))
+
+
+  (add-denval! 'undefined undefined)
+  (add-denval! 'null      null)
+  (add-denval! 'empty     empty)
+  (add-denval! 'true      true)
+  (add-denval! 'false     false)
 
 
   (add-primitive-proc! 'get-tid  (nullary-func get-tid))
@@ -162,21 +178,47 @@
                               (match vals
                                 [`(,val) (cdr (expval->pair val))]
                                 [_ (error 'unary-func "Bad args: ~s" vals)])))
+  (let ()
+    (: get-op [-> String Symbol])
+    (define get-op (λ (ad*) (string->symbol (string-append "c" ad* "r"))))
+
+    (void
+     (for/fold ([prevs : (Listof String) '("a" "d")])
+               ([i (in-range 1 4)])
+       (for*/list : (Listof String)
+                  ([curr (in-list '("a" "d"))]
+                   [prev (in-list prevs)])
+         (define now (string-append curr prev))
+         (add-denval! (get-op now)
+                      (expval->denval
+                       (*eval* `(λ (arg)
+                                  (,(get-op curr)
+                                   (,(get-op prev)
+                                    arg)))
+                               (base-env)
+                               (id-cont))))
+         now))))
+
   (add-primitive-proc! 'null? (λ [vals : DenVal *] : ExpVal
                                 (match vals
                                   [`(,val) (bool-val (null? val))]
                                   [_ (error 'unary-func "Bad args: ~s" vals)])))
 
 
-  (add-primitive-proc! 'read (nullary-func read))
+  (add-primitive-proc! 'read    (nullary-func read))
+  (add-primitive-proc! 'newline (nullary-func newline))
 
   (add-primitive-proc! 'display (unary-func display))
-  (add-primitive-proc! 'print (unary-func print))
-  (add-primitive-proc! 'write (unary-func write))
+  (add-primitive-proc! 'print   (unary-func print))
+  (add-primitive-proc! 'write   (unary-func write))
 
   (add-primitive-proc! 'displayln (unary-func displayln))
-  (add-primitive-proc! 'println (unary-func println))
-  (add-primitive-proc! 'writeln (unary-func writeln))
+  (add-primitive-proc! 'println   (unary-func println))
+  (add-primitive-proc! 'writeln   (unary-func writeln))
+
+  (add-primitive-proc! 'pretty-display (unary-func pretty-display))
+  (add-primitive-proc! 'pretty-print   (unary-func pretty-print))
+  (add-primitive-proc! 'pretty-write   (unary-func pretty-write))
 
 
   (add-primitive-proc! '=  (binary-arithmetic-relation =))
@@ -211,64 +253,64 @@
                                    [_ (error 'n-ary-func "Bad args: ~s" vals)])))
 
 
-  (base-env (extend-env 'apply
-                        (proc-val (procedure '(func args)
-                                             (call-exp (var-exp 'func) (var-exp 'args))
-                                             (empty-env)))
-                        (base-env)))
+  (add-denval! 'apply
+               (proc-val (procedure '(func args)
+                                    (call-exp (var-exp 'func) (var-exp 'args))
+                                    (empty-env))))
 
-  (base-env (extend-env 'void
-                        (expval->denval
-                         (*eval* '(λ _ (cond [#f _]))
-                                 (base-env)
-                                 (id-cont)))
-                        (base-env)))
+  (add-denval! 'void
+               (expval->denval
+                (*eval* '(λ _ (cond [#f _]))
+                        (base-env)
+                        (id-cont))))
 
-  (base-env (extend-env 'Y
-                        (expval->denval
-                         (*eval* '(λ (f)
-                                    ((λ (recur-func)
-                                       (recur-func recur-func))
-                                     (λ (recur-func)
-                                       (f (λ args
-                                            (apply (recur-func recur-func) args))))))
-                                 (base-env)
-                                 (id-cont)))
-                        (base-env)))
+  (add-denval! 'Y
+               (expval->denval
+                (*eval* '(λ (f)
+                           ((λ (recur-func)
+                              (recur-func recur-func))
+                            (λ (recur-func)
+                              (f (λ args
+                                   (apply (recur-func recur-func) args))))))
+                        (base-env)
+                        (id-cont))))
 
 
-  (base-env (extend-env 'map
-                        (expval->denval
-                         (*eval* '(Y (λ (map)
-                                       (λ (func ls)
-                                         (if (null? ls)
-                                             '()
-                                             (cons (func (car ls))
-                                                   (map func (cdr ls)))))))
-                                 (base-env)
-                                 (id-cont)))
-                        (base-env)))
+  (add-denval! 'map
+               (expval->denval
+                (*eval* '(Y (λ (map)
+                              (λ (func ls)
+                                (if (null? ls)
+                                    '()
+                                    (cons (func (car ls))
+                                          (map func (cdr ls)))))))
+                        (base-env)
+                        (id-cont))))
 
-  (base-env (extend-env 'Y*
-                        (expval->denval
-                         (*eval* '(λ funcs
-                                    ((λ (recur-funcs)
-                                       (recur-funcs recur-funcs))
-                                     (λ (recur-funcs)
-                                       (map (λ (func)
-                                              (λ args
-                                                (apply (apply func (recur-funcs recur-funcs)) args)))
-                                            funcs))))
-                                 (base-env)
-                                 (id-cont)))
-                        (base-env)))
+  (add-denval! 'Y*
+               (expval->denval
+                (*eval* '(λ funcs
+                           ((λ (recur-funcs)
+                              (recur-funcs recur-funcs))
+                            (λ (recur-funcs)
+                              (map (λ (func)
+                                     (λ args
+                                       (apply (apply func (recur-funcs recur-funcs)) args)))
+                                   funcs))))
+                        (base-env)
+                        (id-cont))))
 
-  (base-env (extend-env 'call/cc
-                        (expval->denval
-                         (*eval* '(λ (cont) (let/cc cc (cont cc)))
-                                 (base-env)
-                                 (id-cont)))
-                        (base-env)))
+  (add-denval! '*amb*
+               (expval->denval
+                (*eval* '(λ () (raise "amb: Amb tree exhausted!"))
+                        (base-env)
+                        (id-cont))))
+
+  (add-denval! 'call/cc
+               (expval->denval
+                (*eval* '(λ (cont) (let/cc cc (cont cc)))
+                        (base-env)
+                        (id-cont))))
 
 
   (void))
