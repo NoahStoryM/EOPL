@@ -252,20 +252,25 @@
          #:when (and ((listof? s-exp?) pred-exps)
                      ((listof? s-exp?) handler-exps)
                      ((listof? s-exp?) body-exps))
-         (define cc  (gensym 'cc))
-         (define arg (gensym 'arg))
+         (define cc     (gensym 'cc))
+         (define arg    (gensym 'arg))
+         (define raise0 (gensym 'raise))
+         (define raise1 (gensym 'raise))
          (desugar
           `(let/cc ,cc
-             (let ([raise
-                    (λ (,arg)
-                      (,cc
-                       (cond
-                         ,@(map (ann (λ (pred-exp handler-exp)
-                                       `[(,pred-exp ,arg) (,handler-exp ,arg)])
-                                     [-> S-Exp S-Exp (List S-Exp S-Exp)])
-                                pred-exps handler-exps)
-                         [else (raise ,arg)])))])
-               ,@body-exps)))]
+             (let* ([,raise0 raise]
+                    [,raise1
+                     (λ (,arg)
+                       (,cc
+                        (cond
+                          ,@(map (ann (λ (pred-exp handler-exp)
+                                        `[(,pred-exp ,arg) (,handler-exp ,arg)])
+                                      [-> S-Exp S-Exp (List S-Exp S-Exp)])
+                                 pred-exps handler-exps)
+                          [else (,raise0 ,arg)])))])
+               (set! raise ,raise1)
+               ,@body-exps
+               (set! raise ,raise0))))]
 
         ['(mutex) '(mutex 1)]
         [`(with-mutex ,exp ,body-exps ..1)

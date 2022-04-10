@@ -261,6 +261,12 @@
                         (id-cont))))
 
 
+  (add-denval! '*amb*
+               '[-> Nothing]
+               (expval->denval
+                (*eval* '(λ () (raise "amb: Amb tree exhausted!"))
+                        (base-env)
+                        (id-cont))))
   (add-denval! 'map
                '(All (B A) [-> [-> A B] (Listof A) (Listof B)])
                (expval->denval
