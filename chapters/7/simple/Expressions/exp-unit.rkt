@@ -204,30 +204,31 @@
          (if t0
              (begin0 t0
                (match t0
-                 [`[-> (Values ,ts0 ... ,t* *) ,t1]
-                  #:when (and (symbol? vars)
-                              ((listof? type?) ts0)
-                              (type? t*)
-                              (type? t1))
-                  (type-of body (extend-tenv vars (desugar-type `(List* ,@ts0 (Listof ,t*))) tenv) t1)]
-                 [`[-> (Values ,ts0 ...) ,t1]
-                  #:when (and ((listof? type?) ts0)
-                              (type? t1))
-                  (type-of body
-                           (if (list? vars)
-                               (extend-tenv* vars ts0 tenv)
-                               (extend-tenv  vars (desugar-type `(List ,@ts0)) tenv))
-                           t1)]))
+                 [`[-> ,in ,out]
+                  #:when (and (type? in) (type? out))
+                  (match in
+                    [`(Values ,ts ... ,t* *)
+                     #:when (and (symbol? vars)
+                                 ((listof? type?) ts)
+                                 (type? t*))
+                     (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) out)]
+                    [`(Values ,ts ...)
+                     #:when ((listof? type?) ts)
+                     (type-of body
+                              (if (list? vars)
+                                  (extend-tenv* vars ts tenv)
+                                  (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
+                              out)])]))
              (desugar-type
               (cond
                 [(list? vars)
-                 (: ts0 (Listof 'Any))
-                 (define ts0 (make-list (length vars) 'Any))
-                 `[-> (Values ,@ts0) ,(type-of body (extend-tenv* vars ts0 tenv) #f)]]
+                 (: ts (Listof 'Any))
+                 (define ts (make-list (length vars) 'Any))
+                 `[-> (Values ,@ts) ,(type-of body (extend-tenv* vars ts tenv) #f)]]
                 [else `[-> (Values Any *) ,(type-of body (extend-tenv vars '(Listof Any) tenv) #f)]])))]
         [(call-exp rator rands)
-         (: ts (Listof Type))
-         (define ts
+         (: ts0 (Listof Type))
+         (define ts0
            (if (list? rands)
                (for/list : (Listof Type)
                          ([rand (in-list rands)])
@@ -243,26 +244,26 @@
            [(proc-exp vars body)
             (type-of body
                      (if (list? vars)
-                         (extend-tenv* vars ts tenv)
-                         (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
+                         (extend-tenv* vars ts0 tenv)
+                         (extend-tenv  vars (desugar-type `(List ,@ts0)) tenv))
                      t0)]
            [_
             (match (type-of rator tenv #f)
-              [`[-> (Values ,ts0 ... ,t* *) ,t1]
-               #:when (and ((listof? type?) ts0)
-                           (type? t*)
-                           (type? t1))
-               (for ([t0 (in-list (append ts0 (make-list (- (length ts) (length ts0)) t*)))]
-                     [t  (in-list ts)])
-                 (<=: t t0))
-               (check t1)]
-              [`[-> (Values ,ts0 ...) ,t1]
-               #:when (and ((listof? type?) ts0)
-                           (= (length ts0) (length ts))
-                           (type? t1))
-               (for ([t0 (in-list ts0)]
-                     [t  (in-list ts)])
-                 (<=: t t0))
-               (check t1)])])])))
+              [`[-> ,in ,out]
+               #:when (and (type? in) (type? out))
+               (begin0 (check out)
+                 (match in
+                   [`(Values ,ts ... ,t* *)
+                    #:when (and ((listof? type?) ts)
+                                (type? t*))
+                    (for ([t0 (in-list ts0)]
+                          [t  (in-list (append ts (make-list (- (length ts0) (length ts)) t*)))])
+                      (<=: t0 t))]
+                   [`(Values ,ts ...)
+                    #:when (and ((listof? type?) ts)
+                                (= (length ts0) (length ts)))
+                    (for ([t0 (in-list ts0)]
+                          [t  (in-list ts)])
+                      (<=: t0 t))]))])])])))
 
   )

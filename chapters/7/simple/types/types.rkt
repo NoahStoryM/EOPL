@@ -168,13 +168,13 @@
         (equal? t1 t2))))
 
   (: <=: [-> Type Type Boolean])
-  (define <=: (λ (t1 t2) (or (=: t1 t2) (<: t1 t2))))
+  (define <=: (λ (t1 t2) (>=: t2 t1)))
 
   (: >=: [-> Type Type Boolean])
   (define >=: (λ (t1 t2) (or (=: t1 t2) (>: t1 t2))))
 
-  (: <: [-> Type Type Boolean])         ; TODO
-  (define <: (const #f))
+  (: <: [-> Type Type Boolean])
+  (define <: (λ (t1 t2) (>: t2 t1)))
 
   (: >: [-> Type Type Boolean])         ; TODO
   (define >: (const #f))
@@ -210,12 +210,6 @@
                      ((listof? type?) O))
          `[-> (Values ,@(map desugar-type I))
               (Values ,@(map desugar-type O))]]
-        #;[(or `[-> (Values ,I ...) (Values ,O ...)]
-               `[-> ,I ... (Values ,O ...)])
-           #:when (and ((listof? type?) I)
-                       ((listof? type?) O))
-           `[-> (Values ,@(map desugar-type I))
-                (Values ,@(map desugar-type O))]]
         [`[-> ,I ... ,O]
          #:when (and ((listof? type?) I)
                      (type? O))
