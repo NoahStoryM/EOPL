@@ -181,12 +181,11 @@
 
         [(var-exp var)     (check (apply-tenv tenv var))]
 
-        [(begin-exp exps)
-         (let loop ([exp (car exps)] [next (cdr exps)])
-           (cond [(null? next) (type-of exp tenv t0)]
-                 [else
-                  (type-of exp tenv #f)
-                  (loop (car next) (cdr next))]))]
+        [(begin-exp (cons exp exps))
+         (cond [(null? exps) (type-of exp tenv t0)]
+               [else
+                (type-of exp tenv #f)
+                (type-of (begin-exp exps) tenv t0)])]
 
         [(if-exp pred-exp true-exp false-exp)
          (define tp (type-of pred-exp  tenv 'Boolean))
