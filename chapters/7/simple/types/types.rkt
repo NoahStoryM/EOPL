@@ -141,18 +141,16 @@
       [(t1 t2)
        (and t1 t2
             (or (and (=: t1 t2) t1)
-                (and (eq? 'Any t1) t1)
-                (and (eq? 'Any t2) t2)
-                (and (eq? 'Nothing t1) t2)
-                (and (eq? 'Nothing t2) t1)
-
-                (and (eq? #f t1) (eq? #t t2) 'Boolean)
-                (and (eq? #t t1) (eq? #f t2) 'Boolean)
-
-                (and (eq? 'Natural t1) (eq? 'Real t2) 'Real)
-                (and (eq? 'Real t1) (eq? 'Natural t2) 'Real)
-
-                'Any))]
+                (match* (t1 t2)
+                  [('Any _) t1]
+                  [(_ 'Any) t2]
+                  [('Nothing _) t2]
+                  [(_ 'Nothing) t1]
+                  [('True 'False) 'Boolean]
+                  [('False 'True) 'Boolean]
+                  [('Natural 'Real) 'Real]
+                  [('Real 'Natural) 'Real]
+                  [(_ _) 'Any])))]
       [(t1 t2 . ts)
        (and t1 t2 (types? ts)
             (for/fold ([res : Type (type-union t1 t2)])
@@ -167,17 +165,25 @@
             [t2 (desugar-type t2)])
         (equal? t1 t2))))
 
-  (: <=: [-> Type Type Boolean])
-  (define <=: (λ (t1 t2) (>=: t2 t1)))
-
   (: >=: [-> Type Type Boolean])
-  (define >=: (λ (t1 t2) (or (=: t1 t2) (>: t1 t2))))
+  (define >=: (λ (t1 t2) (<=: t2 t1)))
 
-  (: <: [-> Type Type Boolean])
-  (define <: (λ (t1 t2) (>: t2 t1)))
+  (: <=: [-> Type Type Boolean])
+  (define <=: (λ (t1 t2) (or (=: t1 t2) (<: t1 t2))))
 
-  (: >: [-> Type Type Boolean])         ; TODO
-  (define >: (const #f))
+  (: >: [-> Type Type Boolean])
+  (define >: (λ (t1 t2) (<: t2 t1)))
+
+  (: <: [-> Type Type Boolean])         ; TODO
+  (define <:
+    (λ (t1 t2)
+      (match* (t1 t2)
+        [(_ 'Any) #t]
+        [('Nothing _) #t]
+        [('True  'Boolean) #t]
+        [('False 'Boolean) #t]
+        [('Natural 'Real) #t]
+        [(_ _) #f])))
 
 
   (: desugar-type [-> Type Type])

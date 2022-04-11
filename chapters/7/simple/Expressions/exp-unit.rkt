@@ -263,12 +263,12 @@
                                 (type? t*))
                     (for ([t0 (in-list ts0)]
                           [t  (in-list (append ts (make-list (- (length ts0) (length ts)) t*)))])
-                      (<=: t0 t))]
+                      (unless (<=: t0 t) (raise-type-of-error t0 t exp)))]
                    [`(Values ,ts ...)
                     #:when (and ((listof? type?) ts)
                                 (= (length ts0) (length ts)))
                     (for ([t0 (in-list ts0)]
                           [t  (in-list ts)])
-                      (<=: t0 t))]))])])])))
+                      (unless (<=: t0 t) (raise-type-of-error t0 t exp)))]))])])])))
 
   )
