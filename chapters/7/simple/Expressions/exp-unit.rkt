@@ -13,6 +13,16 @@
 (provide exp@)
 
 
+(: raise-type-of-error [-> Any Any Any Nothing])
+(define raise-type-of-error
+  (λ (expected given in)
+    (raise-arguments-error
+     'type-of   "type mismatch"
+     "expected" expected
+     "given"    given
+     "in"       in)))
+
+
 (define-unit exp@
   (import ref^ cont^ values^ env^ tenv^ proc^)
   (export exp^)
@@ -155,10 +165,7 @@
               (match t1
                 [`(Values ,t) t]
                 [_ t1])
-              (raise-arguments-error 'type-of   "type mismatch"
-                                     "expected" t0
-                                     "given"    t1
-                                     "in"       exp))))
+              (raise-type-of-error t0 t1 exp))))
 
       (match exp
         [(ann-exp exp type) (begin0 (check type) (type-of exp tenv type))]
@@ -189,11 +196,7 @@
            [(True)    tt]
            [(False)   tf]
            [(Boolean) (check (type-union tt tf))]
-           [else
-            (raise-arguments-error 'type-of   "type mismatch"
-                                   "expected" 'Boolean
-                                   "given"    tp
-                                   "in"       pred-exp)])]
+           [else (raise-type-of-error 'Boolean tp pred-exp)])]
 
 
         #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv)]
