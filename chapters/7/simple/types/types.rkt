@@ -54,8 +54,8 @@
   (define-type S-List (Listof S-Exp))
   (define-predicate s-list? S-List)
 
-  (define-type Ann-S-Exp  (U Literal (List 'ann S-Exp Type)))
-  (define-predicate ann-s-exp?  Ann-S-Exp)
+  (define-type Ann-S-Exp (U Literal (List 'ann S-Exp Type)))
+  (define-predicate ann-s-exp? Ann-S-Exp)
 
   (define-type Type (U Symbol Types))
   (define-predicate type? Type)
@@ -188,8 +188,16 @@
 
         ['(List) 'Null]
         [`(List ,A0 ,A* ...)
+         #:when ((listof? type?) A*)
          `(Pair ,(desugar-type A0)
-                ,(desugar-type `(List ,@(map desugar-type A*))))]
+                ,(desugar-type `(List ,@A*)))]
+        [`(List* ,A0 ,A1)
+         `(Pair ,(desugar-type A0)
+                ,(desugar-type A0))]
+        [`(List* ,A0 ,A* ..1)
+         #:when ((listof? type?) A*)
+         `(Pair ,(desugar-type A0)
+                ,(desugar-type `(List* ,@A*)))]
 
         ['[->] '[-> (Values) (Values)]]
         [`[-> (Values ,I ...) (Values ,O ...)]

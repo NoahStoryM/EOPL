@@ -45,5 +45,6 @@
           ))])
   (displayln "----------------------------------------------")
   (pretty-print code)
+  (pretty-print (desugar (auto-ann code)))
   (pretty-print (*type-check* code (base-tenv) #f))
   (newline))
