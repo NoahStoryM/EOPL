@@ -305,8 +305,8 @@
   (add-primitive-proc! '<= '[-> Real Real Boolean] (binary-arithmetic-relation '<= <=))
 
 
-  (add-primitive-proc! 'real? '[-> Any Boolean]  (unary-pred 'real? real?))
-  (add-primitive-proc! 'zero? '[-> Real Boolean] (unary-arithmetic-pred 'zero? zero?))
+  (add-primitive-proc! 'real? '[-> Any Boolean : Real]  (unary-pred 'real? real?))
+  (add-primitive-proc! 'zero? '[-> Real Boolean : Zero] (unary-arithmetic-pred 'zero? zero?))
 
   (add-primitive-proc! 'sub1  '[-> Real Real]  (unary-arithmetic-func 'sub1  sub1))
   (add-primitive-proc! 'add1  '[-> Real Real]  (unary-arithmetic-func 'add1  add1))
@@ -320,17 +320,17 @@
   (add-primitive-proc! '/ '[-> Real * Real] (n-ary-arithmetic-func1 '/ /))
 
   ;; Boolean
-  (add-primitive-proc! 'boolean? '[-> Any Boolean] (unary-pred 'boolean? boolean?))
-  (add-primitive-proc! 'not      '[-> Any Boolean] (unary-pred 'not      not))
-  (add-primitive-proc! 'false?   '[-> Any Boolean] (unary-pred 'false?   false?))
-  (add-primitive-proc! 'true?    '[-> Any Boolean] (unary-pred 'true?    true?))
+  (add-primitive-proc! 'boolean? '[-> Any Boolean : Boolean] (unary-pred 'boolean? boolean?))
+  (add-primitive-proc! 'not      '[-> Any Boolean : False]   (unary-pred 'not      not))
+  (add-primitive-proc! 'false?   '[-> Any Boolean : False]   (unary-pred 'false?   false?))
+  (add-primitive-proc! 'true?    '[-> Any Boolean : True]    (unary-pred 'true?    true?))
 
   ;; Void
-  (add-primitive-proc! 'void  '[-> Any * Void]  (n-ary-func 'void  void))
-  (add-primitive-proc! 'void? '[-> Any Boolean] (unary-pred 'void? void?))
+  (add-primitive-proc! 'void  '[-> Any * Void] (n-ary-func 'void void))
+  (add-primitive-proc! 'void? '[-> Any Boolean : Void] (unary-pred 'void? void?))
 
   ;; Undefined
   (add-denval! 'undefined 'Undefined undefined)
-  (add-primitive-proc! 'undefined? '[-> Any Boolean] (unary-pred 'void? void?))
+  (add-primitive-proc! 'undefined? '[-> Any Boolean : Undefined] (unary-pred 'void? void?))
 
   )
