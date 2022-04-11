@@ -204,8 +204,11 @@
          (if t0
              (begin0 t0
                (match t0
-                 [`[-> ,in ,out]
-                  #:when (and (type? in) (type? out))
+                 [`[-> ,in ,out : #:+ ,T #:- ,F]
+                  #:when (and (type? in)
+                              (type? out)
+                              (type? T)
+                              (type? F))
                   (match in
                     [`(Values ,ts ... ,t* *)
                      #:when (and (symbol? vars)
@@ -249,8 +252,11 @@
                      t0)]
            [_
             (match (type-of rator tenv #f)
-              [`[-> ,in ,out]
-               #:when (and (type? in) (type? out))
+              [`[-> ,in ,out : #:+ ,T #:- ,F]
+               #:when (and (type? in)
+                           (type? out)
+                           (type? T)
+                           (type? F))
                (begin0 (check out)
                  (match in
                    [`(Values ,ts ... ,t* *)
