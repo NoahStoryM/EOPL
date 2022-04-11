@@ -204,24 +204,24 @@
          (if t0
              (begin0 t0
                (match t0
-                 [`[-> ,in ,out : #:+ ,T #:- ,F]
-                  #:when (and (type? in)
-                              (type? out)
+                 [`[-> ,I ,O : #:+ ,T #:- ,F]
+                  #:when (and (type? I)
+                              (type? O)
                               (type? T)
                               (type? F))
-                  (match in
+                  (match I
                     [`(Values ,ts ... ,t* *)
                      #:when (and (symbol? vars)
                                  ((listof? type?) ts)
                                  (type? t*))
-                     (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) out)]
+                     (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) O)]
                     [`(Values ,ts ...)
                      #:when ((listof? type?) ts)
                      (type-of body
                               (if (list? vars)
                                   (extend-tenv* vars ts tenv)
                                   (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
-                              out)])]))
+                              O)])]))
              (desugar-type
               (cond
                 [(list? vars)
@@ -252,13 +252,13 @@
                      t0)]
            [_
             (match (type-of rator tenv #f)
-              [`[-> ,in ,out : #:+ ,T #:- ,F]
-               #:when (and (type? in)
-                           (type? out)
+              [`[-> ,I ,O : #:+ ,T #:- ,F]
+               #:when (and (type? I)
+                           (type? O)
                            (type? T)
                            (type? F))
-               (begin0 (check out)
-                 (match in
+               (begin0 (check O)
+                 (match I
                    [`(Values ,ts ... ,t* *)
                     #:when (and ((listof? type?) ts)
                                 (type? t*))
