@@ -190,7 +190,7 @@
                  (apply inst-type t1 ts))])))
 
       (match exp
-        [(ann-exp exp type) (begin0 (check type) (type-of exp tenv type))]
+        [(ann-exp  exp type) (begin0 (check type) (type-of exp tenv type))]
         [(cast-exp exp type) (begin0 type (type-of exp tenv 'Any))]
         [(inst-exp exp types)
          (check (apply inst-type (type-of exp tenv #f) types))]
