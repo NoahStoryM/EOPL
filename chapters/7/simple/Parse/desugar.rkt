@@ -200,12 +200,16 @@
                              (cdr bind-vars)
                              (cdr bind-exps))
                    ,@body-exps))))]
-        [`(letrec ([,bind-vars : ,bind-types ,bind-exps] ...)
+        [`(letrec ([,bind-vars ,bind-exps] ...)
             ,body-exps ..1)
          #:when (and ((listof? symbol?) bind-vars)
-                     ((listof? type?)   bind-types)
                      ((listof? s-exp?)  bind-exps)
                      ((listof? s-exp?)  body-exps))
+         (: bind-types (Listof Type))
+         (define bind-types
+           (map (ann (λ (exp) (or (guess-type exp) 'Any))
+                     [-> S-Exp Type])
+                bind-exps))
          #;(desugar
             `(let ,(map (ann (λ (var exp) `[,var ,exp])
                              [-> Symbol S-Exp (List Symbol S-Exp)])

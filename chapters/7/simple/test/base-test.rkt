@@ -87,9 +87,7 @@
           (real? (void))
 
           (begin
-            (: dio Boolean)
             (define dio #f)
-            (: noah String)
             (define noah "")
             (displayln noah)
             (set! noah "Noah Ma")

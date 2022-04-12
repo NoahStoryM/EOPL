@@ -186,6 +186,30 @@
         [(_ _) #f])))
 
 
+  (: guess-type [-> S-Exp (Option Type)])
+  (define guess-type
+    (λ (exp)
+      (match exp
+        [`(,(or 'quote 'quasiquote)
+           ,(? literal? atom))
+         (guess-type atom)]
+        [`(,(or 'quote 'quasiquote)
+           ,(? symbol?))
+         'Symbol]
+        [(? true?)      'True]
+        [(? false?)     'False]
+        [(? natural?)   'Natural]
+        [(? real?)      'Real]
+        [(? string?)    'String]
+        [(? bytes?)     'Bytes]
+        [(? char?)      'Char]
+        [(? null?)      'Null]
+        [(? undefined?) 'Undefined]
+        [`(ann  ,exp ,type) #:when (and (s-exp? exp) (type? type)) type]
+        [`(cast ,exp ,type) #:when (and (s-exp? exp) (type? type)) type]
+        [_ #f])))
+
+
   (: desugar-type [-> Type Type])
   (define desugar-type
     (λ (type)

@@ -30,9 +30,7 @@
        (in-list
         '(
           (begin
-            (: dio Boolean)
             (define dio #f)
-            (: noah String)
             (define noah "")
             (displayln noah)
             (set! noah "Noah Ma")
@@ -80,6 +78,7 @@
           ))])
   (displayln "----------------------------------------------")
   (pretty-print code)
+  (pretty-print (auto-ann code))
   (pretty-print (desugar (auto-ann code)))
   (pretty-print (*type-check* code (base-tenv) #f))
   (newline))
