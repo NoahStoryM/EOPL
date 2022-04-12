@@ -147,7 +147,7 @@
             #:when (and (symbol? bind-var)
                         (s-exp?  bind-exp))
             (loop (cons bind-var  bind-vars)
-                  (cons (or (guess-type bind-exp) 'Any) bind-types)
+                  (cons (guess-type bind-exp) bind-types)
                   (cons (auto-ann bind-exp)  bind-exps)
                   binds0)]
            ['()
