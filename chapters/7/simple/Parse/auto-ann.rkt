@@ -49,15 +49,15 @@
                   (cons type0 types)
                   (cons (auto-ann val0) vals)
                   exps0)]
-           [`((define ,var0 ,val0)
-              ,exps0 ..1)
-            #:when (and (symbol? var0)
-                        (s-exp?  val0)
-                        ((listof? s-exp?) exps0))
-            (loop (cons var0  vars)
-                  (cons #f types)
-                  (cons (auto-ann val0) vals)
-                  exps0)]
+           #;[`((define ,var0 ,val0)
+                ,exps0 ..1)
+              #:when (and (symbol? var0)
+                          (s-exp?  val0)
+                          ((listof? s-exp?) exps0))
+              (loop (cons var0  vars)
+                    (cons #f types)
+                    (cons (auto-ann val0) vals)
+                    exps0)]
            [_ (if (or (null? vars) (null? types) (null? vals))
                   `(begin ,@(map auto-ann exps))
                   (auto-ann
@@ -120,7 +120,7 @@
 
       [`(,(? (λ (arg)
                (case arg
-                 [(let let* letrec letrec*) #t]
+                 [(let let* #;letrec #;letrec*) #t]
                  [else #f]))
              let-op)
          ,binds

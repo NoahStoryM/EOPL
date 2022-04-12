@@ -87,10 +87,35 @@
           (real? (void))
 
           (begin
+            (: dio Boolean)
             (define dio #f)
             (: noah String)
             (define noah "")
             (displayln noah)
             (set! noah "Noah Ma")
-            (displayln noah))))])
+            (displayln noah))
+
+          (begin
+            (: fact [-> Real Real])
+            (define fact
+              (λ (n)
+                (if (zero? n)
+                    1
+                    (* n (fact (sub1 n))))))
+            (displayln (fact 0))
+            (displayln (fact 1))
+            (displayln (fact 2))
+            (displayln (fact 3)))
+
+          (begin
+            (: pdisplayln (All (A) [-> A Void]))
+            (define pdisplayln
+              (λ (arg)
+                (displayln arg)))
+
+            ((inst pdisplayln Real) 123)
+            ((inst pdisplayln String) "123")
+            ((inst pdisplayln Symbol) '|123|)
+            ((inst pdisplayln Any) '123))
+          ))])
   (displayln (format "test ~a: ~a" i (*check-code* code (base-env) eval-ns))))

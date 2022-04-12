@@ -13,10 +13,6 @@
     (λ (code)
       (match code
         ;; macro
-        [`(ann ,exp ,type)
-         #:when (and (s-exp? exp) (type? type))
-         `(ann ,(desugar exp) ,(desugar-type type))]
-
         [`(,(or 'quote 'quasiquote) ,(? literal? atom)) atom]
         [`(,(or 'quote 'quasiquote) ,(? symbol?))       code]
         [`(,(or 'quote 'quasiquote) ())                 'null]
@@ -204,24 +200,25 @@
                              (cdr bind-vars)
                              (cdr bind-exps))
                    ,@body-exps))))]
-        [`(letrec ([,bind-vars ,bind-exps] ...)
+        [`(letrec ([,bind-vars : ,bind-types ,bind-exps] ...)
             ,body-exps ..1)
          #:when (and ((listof? symbol?) bind-vars)
+                     ((listof? type?)   bind-types)
                      ((listof? s-exp?)  bind-exps)
                      ((listof? s-exp?)  body-exps))
-         (desugar
-          `(let ,(map (ann (λ (var exp) `[,var ,exp])
-                           [-> Symbol S-Exp (List Symbol S-Exp)])
-                      bind-vars bind-exps)
-               ,@(map desugar body-exps)))
          #;(desugar
-            `(let ,(map (ann (λ (var) `[,var undefined])
-                             [-> Symbol (List Symbol 'undefined)])
-                        bind-vars)
-                 ,@(map (ann (λ (var exp) `(set! ,var ,exp))
-                             [-> Symbol S-Exp (List 'set! Symbol S-Exp)])
+            `(let ,(map (ann (λ (var exp) `[,var ,exp])
+                             [-> Symbol S-Exp (List Symbol S-Exp)])
                         bind-vars bind-exps)
-               ,@(map desugar body-exps)))]
+                 ,@(map desugar body-exps)))
+         (desugar
+          `(let ,(map (ann (λ (var type) `[,var (cast undefined ,type)])
+                           [-> Symbol Type (List Symbol S-Exp)])
+                      bind-vars bind-types)
+               ,@(map (ann (λ (var exp) `(set! ,var ,exp))
+                           [-> Symbol S-Exp (List 'set! Symbol S-Exp)])
+                      bind-vars bind-exps)
+             ,@(map desugar body-exps)))]
 
         [`(let/cc ,cc-var1 (let/cc ,cc-var2 ,body-exps ..1))
          #:when (and (symbol? cc-var1)
@@ -299,6 +296,15 @@
                      ((or/c symbol? (listof? symbol?)) args)
                      (s-exp? body-exp))
          `(,op ,args ,(desugar body-exp))]
+        [`(ann ,exp ,t)
+         #:when (and (s-exp? exp) (type? t))
+         `(ann ,(desugar exp) ,(desugar-type t))]
+        [`(cast ,exp ,t)
+         #:when (and (s-exp? exp) (type? t))
+         `(cast ,(desugar exp) ,(desugar-type t))]
+        [`(inst ,exp ,ts ..1)
+         #:when (and (s-exp? exp) ((listof? type?) ts))
+         `(inst ,(desugar exp) ,@(map desugar-type ts))]
         [(? list?) (map desugar code)]
         [_ code
            #;(match code

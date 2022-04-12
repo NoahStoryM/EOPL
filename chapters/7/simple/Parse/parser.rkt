@@ -9,9 +9,16 @@
 (define parser
   (λ (code)
     (match code
-      [`(ann ,v ,t)
-       #:when (and (s-exp? v) (type? t))
-       `(ann-exp ,(parser v) ',t)]
+      [`(ann ,exp ,t)
+       #:when (and (s-exp? exp) (type? t))
+       `(ann-exp ,(parser exp) ',t)]
+      [`(cast ,exp ,t)
+       #:when (and (s-exp? exp) (type? t))
+       `(cast-exp ,(parser exp) ',t)]
+      [`(inst ,exp ,ts ..1)
+       #:when (and (s-exp? exp) ((listof? type?) ts))
+       `(inst-exp ,(parser exp)
+                  (list ,@(map (ann (λ (t) `(quote ,t)) [-> Type Type]) ts)))]
 
       [`(,(or 'quote 'quasiquote) ,(? symbol? sym))
        `(symbol-exp ',sym)]

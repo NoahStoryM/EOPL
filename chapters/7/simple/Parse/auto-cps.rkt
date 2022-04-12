@@ -19,8 +19,11 @@
 (define-predicate simple-λ? Simple-λ)
 
 (define-type Simple-Exp (U Literal Symbol (List 'quote S-Exp) Simple-λ
-                           (List 'set! Symbol Simple-Exp)
-                           (List 'new-closure Simple-Exp)))
+                           (List  'ann  Simple-Exp Type)
+                           (List  'cast Simple-Exp Type)
+                           (List* 'inst Simple-Exp (Listof Type))
+                           (List  'set! Symbol Simple-Exp)
+                           (List  'new-closure Simple-Exp)))
 (define-predicate simple-exp? Simple-Exp)
 
 (define-type K-Exp (List (U Lambda Trace-Lambda)
@@ -72,6 +75,19 @@
       (λ (code ctx)
         (match code
           [(? simple-exp?) (ctx code)]
+
+          ;; TODO
+          #;[`(ann  ,exp ,t)
+             #:when (and (s-exp? exp) (type? t))
+             (cps exp (λ (val) (ctx `(ann  ,val ,t))))]
+          #;[`(cast ,exp ,t)
+             #:when (and (s-exp? exp) (type? t))
+             (cps exp (λ (val) (ctx `(cast ,val ,t))))]
+          #;[`(inst ,exp ,ts ..1)
+             #:when (and (s-exp? exp)
+                         ((listof? type?) ts))
+             (cps exp (λ (val) (ctx `(inst ,val ,@ts))))]
+
 
           [`(,(? λ?) ,args ,body-exp)
            #:when (and ((or/c symbol? (listof? symbol?)) args)

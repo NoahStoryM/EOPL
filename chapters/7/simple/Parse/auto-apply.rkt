@@ -9,6 +9,10 @@
 (define auto-apply
   (λ (code)
     (match code
+      [`(ann  ,exp ,t) #:when (and (s-exp? exp) (type? t)) code]
+      [`(cast ,exp ,t) #:when (and (s-exp? exp) (type? t)) code]
+      [`(inst ,exp ,ts ..1) #:when (and (s-exp? exp) ((listof? type?) ts)) code]
+
       [(or `(,(or 'quote 'quasiquote) ,_)
            (? boolean?)
            (? real?)

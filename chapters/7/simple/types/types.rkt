@@ -194,6 +194,20 @@
         [`(! (! ,T))  #:when (type? T) (desugar-type T)]
 
 
+        [`(All () ,T) #:when (type? T) (desugar-type T)]
+        [`(All (,A ,.. ,B ...) ,T)
+         #:when (and (type? A)
+                     (eq? .. '...)
+                     ((listof? type?) B)
+                     (type? T))
+         `(All (A ...) ,(desugar-type `(All (,@B) ,T)))]
+        [`(All (,A ,B ..1) ,T)
+         #:when (and (type? A)
+                     ((listof? type?) B)
+                     (type? T))
+         `(All (A) ,(desugar-type `(All (,@B) ,T)))]
+
+
         ['(List) 'Null]
         [`(List ,A0 ,A* ...)
          #:when (and (type? A0)
@@ -396,6 +410,18 @@
      [type : Type])
     #:transparent
     #:type-name Ann-Exp)
+
+  (define-struct (cast-exp exp)
+    ([exp  : Exp]
+     [type : Type])
+    #:transparent
+    #:type-name Cast-Exp)
+
+  (define-struct (inst-exp exp)
+    ([exp   : Exp]
+     [types : (Pair Type (Listof Type))])
+    #:transparent
+    #:type-name Inst-Exp)
 
 
   (define-struct (assign-exp exp)

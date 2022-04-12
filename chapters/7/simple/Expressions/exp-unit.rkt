@@ -32,7 +32,9 @@
   (define value-of/k
     (λ (exp env cont)
       (match exp
-        [(ann-exp exp type) (value-of/k exp env cont)]
+        [(ann-exp  exp type)  (value-of/k exp env cont)]
+        [(cast-exp exp type)  (value-of/k exp env cont)]
+        [(inst-exp exp types) (value-of/k exp env cont)]
 
         [(assign-exp var exp)
          (value-of/k
@@ -167,8 +169,31 @@
                 [_ t1])
               (raise-type-of-error t0 t1 exp))))
 
+      (: inst-type [-> Type Type Type * Type])
+      (define inst-type
+        (λ (t0 t . ts)
+          (match t0
+            [`(All (,A) ,T)
+             #:when (and (type? A) (type? T))
+             (: t1 Type)
+             (define t1
+               (desugar-type
+                (let loop ([T T])
+                  (match T
+                    [B #:when (=: A B) t]
+                    [`(All (,B) ,_) #:when (=: A B) T]
+                    [(? list?) (map loop T)]
+                    [_ T]))))
+
+             (if (null? ts)
+                 t1
+                 (apply inst-type t1 ts))])))
+
       (match exp
         [(ann-exp exp type) (begin0 (check type) (type-of exp tenv type))]
+        [(cast-exp exp type) (begin0 type (type-of exp tenv 'Any))]
+        [(inst-exp exp types)
+         (check (apply inst-type (type-of exp tenv #f) types))]
 
         [(assign-exp var exp) (begin0 (check 'Void) (type-of exp tenv (apply-tenv tenv var)))]
 
@@ -203,6 +228,14 @@
          (if t0
              (begin0 t0
                (match t0
+                 [`(All (,A) ,T)
+                  #:when (and (type? A) (type? T))
+                  (type-of exp (extend-tenv (assert A symbol?) 'Nothing tenv) T)]
+                 #;[`(All (,A ,..) ,T)
+                    #:when (and (type? A)
+                                (eq? .. '...)
+                                (type? T))
+                    (type-of exp (extend-tenv (assert A symbol?) 'Nothing tenv) T)]
                  [`[-> ,I ,O : #:+ ,T #:- ,F]
                   #:when (and (type? I)
                               (type? O)

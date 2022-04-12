@@ -30,6 +30,7 @@
        (in-list
         '(
           (begin
+            (: dio Boolean)
             (define dio #f)
             (: noah String)
             (define noah "")
@@ -37,11 +38,45 @@
             (set! noah "Noah Ma")
             (displayln noah))
           (begin
-            (define dio #f)
-            (define noah '||)
-            (displayln noah)
-            (set! noah "Noah Ma")
-            (displayln noah))
+            (: fact [-> Real Real])
+            (define fact
+              (λ (n)
+                (if (zero? n)
+                    1
+                    (* n (fact (sub1 n))))))
+            (displayln (fact 0))
+            (displayln (fact 1))
+            (displayln (fact 2))
+            (displayln (fact 3)))
+          (begin
+            (: pdisplayln (All (A) [-> A Void]))
+            (define pdisplayln
+              (λ (arg)
+                (displayln arg)))
+
+            ((inst pdisplayln Real) 123)
+            ((inst pdisplayln String) "123")
+            ((inst pdisplayln Symbol) '|123|)
+            ((inst pdisplayln Any) '123))
+
+          ;;; Type mismatch cases:
+          #;(begin
+              (: dio Boolean)
+              (define dio #f)
+              (: noah Symbol)
+              (define noah '||)
+              (displayln noah)
+              (set! noah "Noah Ma")
+              (displayln noah))
+          #;(begin
+              (: pdisplayln (All (A) [-> A Void]))
+              (define pdisplayln
+                (λ (arg)
+                  (displayln arg)))
+
+              ((inst pdisplayln String) 123)
+              ((inst pdisplayln String) "123")
+              ((inst pdisplayln Symbol) '|123|))
           ))])
   (displayln "----------------------------------------------")
   (pretty-print code)
