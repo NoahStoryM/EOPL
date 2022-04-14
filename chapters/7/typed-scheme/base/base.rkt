@@ -280,6 +280,9 @@
             (base-env  (extend-env  name val  (base-env)))))))
 
 
+  ;; Identity
+  (add-primitive-proc! 'identity '(All (A) [-> A A]) (unary-func 'identity identity))
+
   ;; IO
   (add-primitive-proc! 'read    '[-> Any]  (nullary-func 'read    read))
   (add-primitive-proc! 'newline '[-> Void] (nullary-func 'newline newline))
@@ -320,6 +323,8 @@
   (add-primitive-proc! '/ '[-> Real * Real] (n-ary-arithmetic-func1 '/ /))
 
   ;; Boolean
+  (add-denval! 'true  'True  true)
+  (add-denval! 'false 'False false)
   (add-primitive-proc! 'boolean? '[-> Any Boolean : Boolean] (unary-pred 'boolean? boolean?))
   (add-primitive-proc! 'not      '[-> Any Boolean : False]   (unary-pred 'not      not))
   (add-primitive-proc! 'false?   '[-> Any Boolean : False]   (unary-pred 'false?   false?))
@@ -332,5 +337,21 @@
   ;; Undefined
   (add-denval! 'undefined 'Undefined undefined)
   (add-primitive-proc! 'undefined? '[-> Any Boolean : Undefined] (unary-pred 'void? void?))
+
+
+  ;; Pair
+  (add-primitive-proc! 'cons '(All (A B) [-> A B (Pair A B)])
+                       (λ [vals : DenVal *] : ExpVal
+                         (match vals
+                           [`(,val-1 ,val-2) (pair-val (cons val-1 val-2))]
+                           [_ (error 'cons "Bad args: ~s" vals)])))
+  (add-primitive-proc! 'car   '(All (A B) [-> (Pair A B) A]) (unary-destruct 'car denpair? (inst car DenVal DenVal)))
+  (add-primitive-proc! 'cdr   '(All (A B) [-> (Pair A B) B]) (unary-destruct 'cdr denpair? (inst cdr DenVal DenVal)))
+  (add-primitive-proc! 'pair? '[-> Any Boolean : (Pair Any Any)] (unary-pred 'pair? pair?))
+
+  ;; Null
+  (add-denval! 'null  'Null null)
+  (add-denval! 'empty 'Null empty)
+  (add-primitive-proc! 'null? '[-> Any Boolean : Null] (unary-pred 'null? null?))
 
   )

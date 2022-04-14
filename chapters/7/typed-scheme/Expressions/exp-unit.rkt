@@ -237,10 +237,8 @@
                                 (type? T))
                     (type-of exp (extend-tenv (assert A symbol?) 'Nothing tenv) T)]
                  [`[-> ,I ,O : #:+ ,T #:- ,F]
-                  #:when (and (type? I)
-                              (type? O)
-                              (type? T)
-                              (type? F))
+                  #:when (and (type? I) (type? O)
+                              (type? T) (type? F))
                   (match I
                     [`(Values ,ts ... ,t* *)
                      #:when (and (symbol? vars)

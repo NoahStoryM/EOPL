@@ -56,6 +56,9 @@
             ((inst pdisplayln String) "123")
             ((inst pdisplayln Symbol) '|123|)
             ((inst pdisplayln Any) '123))
+          ((inst cons Real String) 1 "2")
+          ((inst car Real String) ((inst cons Real String) 1 "2"))
+          ((inst cdr Real String) ((inst cons Real String) 1 "2"))
 
           ;;; Type mismatch cases:
           #;(begin
@@ -75,6 +78,9 @@
               ((inst pdisplayln String) 123)
               ((inst pdisplayln String) "123")
               ((inst pdisplayln Symbol) '|123|))
+          #;((inst cons Real Symbol) 1 "2")
+          #;((inst car Real Symbol) ((inst cons Real Symbol) 1 "2"))
+          #;((inst cdr Real Symbol) ((inst cons Real Symbol) 1 "2"))
           ))])
   (displayln "----------------------------------------------")
   (pretty-print code)
