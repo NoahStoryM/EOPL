@@ -258,6 +258,24 @@
                                     (call-exp (var-exp 'func) (var-exp 'args))
                                     (empty-env))))
 
+  (add-denval! 'memo-λ
+               (expval->denval
+                (*eval* '(λ (f)
+                           (let ([already-run? #f] [result #f])
+                             (λ ()
+                               (unless already-run?
+                                 (set! result (f))
+                                 (set! already-run? #t))
+                               result)))
+                        (base-env)
+                        (id-cont))))
+
+  (add-denval! 'force
+               (expval->denval
+                (*eval* '(λ (thk) (thk))
+                        (base-env)
+                        (id-cont))))
+
   (add-denval! 'void
                (expval->denval
                 (*eval* '(λ _ (cond [#f _]))

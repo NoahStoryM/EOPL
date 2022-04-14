@@ -554,6 +554,22 @@
                 (+eval+ '(λ () (raise "amb: Amb tree exhausted!"))
                         (base-env))))
 
+  (add-denval! 'memo-λ
+               (expval->denval
+                (+eval+ '(λ (f)
+                           (let ([already-run? #f] [result #f])
+                             (λ ()
+                               (unless already-run?
+                                 (set! result (f))
+                                 (set! already-run? #t))
+                               result)))
+                        (base-env))))
+
+  (add-denval! 'force
+               (expval->denval
+                (+eval+ '(λ (thk) (thk))
+                        (base-env))))
+
 
   (add-denval! 'map undefined)
   (add-denval! 'map

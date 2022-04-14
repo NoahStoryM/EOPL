@@ -170,6 +170,16 @@
                (set! *amb* ,amb)
                (*amb*))))]
 
+        [`(lazy  ,exp)
+         #:when (s-exp? exp)
+         `(ann (λ () ,(desugar exp))   ; TODO
+               ,(desugar-type `[-> ,(or (guess-type exp) 'Any)]))]
+        [`(delay ,exp)
+         #:when (s-exp? exp)
+         `(ann (λ () ,(desugar exp))   ; TODO
+               ,(desugar-type `[-> ,(or (guess-type exp) 'Any)]))]
+
+
         [`(let ([,bind-vars ,bind-exps] ...)
             ,body-exps ..1)
          #:when (and ((listof? symbol?) bind-vars)

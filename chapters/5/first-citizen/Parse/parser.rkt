@@ -46,6 +46,14 @@
        `(if-exp ,(parser pred-exp)
                 ,(parser true-exp)
                 ,(parser false-exp))]
+      [`(when ,(? s-exp? pred-exp)
+          ,(? s-exp? #{body-exps : S-List})
+          ..1)
+       (parser `(cond [,pred-exp ,@body-exps]))]
+      [`(unless ,(? s-exp? pred-exp)
+          ,(? s-exp? #{body-exps : S-List})
+          ..1)
+       (parser `(cond [(not ,pred-exp) ,@body-exps]))]
       [`(cond [,(? s-exp? #{pred-exps : S-List})
                ,(? s-exp? #{body-exps : (Listof (Listof Any))})
                ..1]
@@ -92,6 +100,10 @@
                     (,succ ,exp)))
              (set! *amb* ,amb)
              (*amb*))))]
+
+      [`(lazy  ,exp) #:when (s-exp? exp) (parser `(memo-λ (λ () ,exp)))]
+      [`(delay ,exp) #:when (s-exp? exp) (parser `(memo-λ (λ () ,exp)))]
+
 
       [`(with-handlers ([,(? s-exp? #{pred-exps : S-List})
                          ,(? s-exp? #{handler-exps : S-List})]

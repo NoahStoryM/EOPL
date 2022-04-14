@@ -170,6 +170,9 @@
                (set! *amb* ,amb)
                (*amb*))))]
 
+        [`(lazy  ,exp) #:when (s-exp? exp) `(memo-λ (λ () ,(desugar exp)))]
+        [`(delay ,exp) #:when (s-exp? exp) `(memo-λ (λ () ,(desugar exp)))]
+
 
         [`(let ([,bind-vars ,bind-exps] ...)
             ,body-exps ..1)
