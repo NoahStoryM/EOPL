@@ -163,7 +163,13 @@
     (λ (t1 t2)
       (let ([t1 (desugar-type t1)]
             [t2 (desugar-type t2)])
-        (equal? t1 t2))))
+        (or (equal? t1 t2)
+            (match* (t1 t2)
+              [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
+               (and (=: A1 A2) (=: B1 B2))]
+              [(`(Listof ,A1) `(Listof ,A2))
+               (=: A1 A2)]
+              [(_ _) #f])))))
 
   (: >=: [-> Type Type Boolean])
   (define >=: (λ (t1 t2) (<=: t2 t1)))
@@ -183,6 +189,12 @@
         [('True  'Boolean) #t]
         [('False 'Boolean) #t]
         [('Natural 'Real) #t]
+        [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
+         (and (not (=: t1 t2))
+              (<=: A1 A2)
+              (<=: B1 B2))]
+        [(`(Listof ,A1) `(Listof ,A2))
+         (<: A1 A2)]
         [(_ _) #f])))
 
 
