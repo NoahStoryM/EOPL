@@ -302,7 +302,16 @@
                              (type? T) (type? F))
                  (if poly?
                      (let ([O  : Type (desugar-type O)]
-                           [s0 : Type `(Values ,@ts0)])
+                           [s0 : Type
+                               (match I
+                                 [`(Values ,ts ... ,t* *)
+                                  #:when (and ((listof? type?) ts)
+                                              (type? t*))
+                                  `(Values ,@ts0 *)]
+                                 [`(Values ,ts ...)
+                                  #:when (and ((listof? type?) ts)
+                                              (= (length ts0) (length ts)))
+                                  `(Values ,@ts0)])])
                        (: match-types! [-> Type Type Void])
                        (define match-types!
                          (λ (formal actual)
