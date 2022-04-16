@@ -103,6 +103,7 @@
                                             (proc (proc-vars op)
                                                   (proc-body op)
                                                   (copy-env (proc-saved-env op)))))]
+                           [(cont? op) (apply-cont cont op)]
                            [(primitive-proc? op) (apply-cont cont op)]
                            [else (raise-argument-error 'value-of/k "operator?" op)])))
                  [-> Cont [-> ExpVal FinalAnswer]]))
@@ -119,7 +120,7 @@
             'call-rator-frame
             (ann (λ (cont)
                    (λ (op)
-                     (unless (or (proc? op) (primitive-proc? op))
+                     (unless (or (proc? op) (cont? op) (primitive-proc? op))
                        (raise-argument-error 'value-of/k "operator?" op))
 
                      (if (var-exp? rands)
@@ -132,6 +133,8 @@
                                    (λ (args)
                                      (cond [(proc? op)
                                             (apply-procedure/k op (expval->list args) cont)]
+                                           [(cont? op)
+                                            (apply-cont op (car (expval->list args)))]
                                            [(primitive-proc? op)
                                             (apply-cont cont (apply (primitive-proc-λ op) (expval->list args)))])))
                                  [-> Cont [-> ExpVal FinalAnswer]]))
@@ -141,6 +144,8 @@
                            (if (null? rands)
                                (cond [(proc? op)
                                       (apply-procedure/k op (reverse args) cont)]
+                                     [(cont? op)
+                                      (apply-cont op (car (last-pair args)))]
                                      [(primitive-proc? op)
                                       (apply-cont cont (apply (primitive-proc-λ op) (reverse args)))])
                                (value-of/k

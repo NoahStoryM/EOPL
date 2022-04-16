@@ -327,7 +327,7 @@
 
 
   (define-type DenVal (U Literal Symbol Undefined Void Null
-                         Primitive-Proc Proc Trace-Proc
+                         Cont Primitive-Proc Proc Trace-Proc
                          (Queueof DenVal)
 
                          (Boxof     DenVal)
