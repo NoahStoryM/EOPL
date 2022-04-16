@@ -86,6 +86,13 @@
           (zero? (+ 1 2 (- 3 4)))
           (real? (void))
 
+          ((inst cons Real String) 1 "2")
+          ((inst car Real String) ((inst cons Real String) 1 "2"))
+          ((inst cdr Real String) ((inst cons Real String) 1 "2"))
+          (cons 1 "2")
+          (car (cons 1 "2"))
+          (cdr (cons 1 "2"))
+
           (begin
             (define dio #f)
             (define noah "")
