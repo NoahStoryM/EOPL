@@ -8,5 +8,5 @@
 (define-signature exp^
   (
    [value-of/k : [-> Exp Env Cont FinalAnswer]]
-   [type-of    : [-> Exp TEnv (Option Type) Type]]
+   [type-of    : [-> Exp TEnv REnv (Option Type) Type]]
    ))

@@ -398,6 +398,11 @@
      [binds : (Immutable-HashTable Symbol Type)])
     #:type-name TEnv)
 
+  (define-struct renv
+    ([type  : (U 'empty-renv 'extend-renv)]
+     [binds : (Immutable-HashTable Type Type)])
+    #:type-name REnv)
+
 
   (define-struct primitive-proc
     ([λ : [-> DenVal * ExpVal]])
