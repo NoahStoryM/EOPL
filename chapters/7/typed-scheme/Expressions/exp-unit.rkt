@@ -228,7 +228,7 @@
            [else (raise-type-of-error 'Boolean tp pred-exp)])]
 
 
-        #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv)]
+        #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv t0)]
         [(proc-exp vars body)
          (if t0
              (begin0 t0
