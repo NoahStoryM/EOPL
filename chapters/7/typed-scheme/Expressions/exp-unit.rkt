@@ -248,12 +248,12 @@
                  (match t0
                    [`(All (,A) ,T)
                     #:when (and (type? A) (type? T))
-                    (type-of exp (extend-tenv (assert A symbol?) 'Nothing tenv) renv T)]
+                    (type-of exp tenv renv T)]
                    #;[`(All (,A ,..) ,T)
                       #:when (and (type? A)
                                   (eq? .. '...)
                                   (type? T))
-                      (type-of exp (extend-tenv (assert A symbol?) 'Nothing tenv) renv T)]
+                      (type-of exp tenv renv T)]
                    [`[-> ,I ,O : #:+ ,T #:- ,F]
                     #:when (and (type? I) (type? O)
                                 (type? T) (type? F))
