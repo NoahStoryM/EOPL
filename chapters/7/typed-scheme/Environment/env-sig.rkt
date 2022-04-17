@@ -23,8 +23,8 @@
    [extend-env? : [-> Env Boolean]]
 
    [env?          : [-> Any Boolean : Env]]
-   [apply-env-ref : [-> Env Symbol Ref]]
-   [apply-env     : [-> Env Symbol DenVal]]
+   [apply-env-ref : [->* (Env Symbol) ([-> Ref]) Ref]]
+   [apply-env     : [->* (Env Symbol) ([-> DenVal]) DenVal]]
    [has-binding?  : [-> Env Symbol Boolean]]
    [set-binding!  : [-> Env Symbol DenVal Void]]
    [copy-env      : [-> Env Env]]

@@ -106,15 +106,17 @@
   (define-predicate env? Env)
 
 
-  (: apply-env-ref [-> Env Symbol Ref])
+  (: apply-env-ref [->* (Env Symbol) ([-> Ref]) Ref])
   (define apply-env-ref
-    (λ (env var)
-      (hash-ref (env-binds env) var)))
+    (case-lambda
+      [(env var) (hash-ref (env-binds env) var)]
+      [(env var fail-res) (hash-ref (env-binds env) var fail-res)]))
 
-  (: apply-env [-> Env Symbol DenVal])
+  (: apply-env [->* (Env Symbol) ([-> DenVal]) DenVal])
   (define apply-env
-    (λ (env var)
-      (deref (apply-env-ref env var))))
+    (case-lambda
+      [(env var) (deref (apply-env-ref env var))]
+      [(env var fail-res) (deref (apply-env-ref env var (λ () (newref (fail-res)))))]))
 
 
   (: has-binding? [-> Env Symbol Boolean])

@@ -19,6 +19,6 @@
    [extend-renv? : [-> REnv Boolean]]
 
    [renv?          : [-> Any Boolean : REnv]]
-   [apply-renv     : [-> REnv Symbol Type]]
+   [apply-renv     : [->* (REnv Type) ([-> Type]) Type]]
    [has-rbinding?  : [-> REnv Symbol Boolean]]
    ))

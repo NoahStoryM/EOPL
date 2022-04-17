@@ -19,6 +19,6 @@
    [extend-tenv? : [-> TEnv Boolean]]
 
    [tenv?          : [-> Any Boolean : TEnv]]
-   [apply-tenv     : [-> TEnv Symbol Type]]
+   [apply-tenv     : [->* (TEnv Symbol) ([-> Type]) Type]]
    [has-tbinding?  : [-> TEnv Symbol Boolean]]
    ))

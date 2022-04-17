@@ -72,10 +72,11 @@
   (define-predicate tenv? TEnv)
 
 
-  (: apply-tenv [-> TEnv Symbol Type])
+  (: apply-tenv [->* (TEnv Symbol) ([-> Type]) Type])
   (define apply-tenv
-    (λ (tenv var)
-      (hash-ref (tenv-binds tenv) var)))
+    (case-lambda
+      [(tenv var) (hash-ref (tenv-binds tenv) var)]
+      [(tenv var fail-res) (hash-ref (tenv-binds tenv) var fail-res)]))
 
 
   (: has-tbinding? [-> TEnv Symbol Boolean])

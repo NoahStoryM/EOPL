@@ -72,10 +72,11 @@
   (define-predicate renv? REnv)
 
 
-  (: apply-renv [-> REnv Type Type])
+  (: apply-renv [->* (REnv Type) ([-> Type]) Type])
   (define apply-renv
-    (λ (renv key)
-      (hash-ref (renv-binds renv) key)))
+    (case-lambda
+      [(renv key) (hash-ref (renv-binds renv) key)]
+      [(renv key fail-res) (hash-ref (renv-binds renv) key fail-res)]))
 
 
   (: has-rbinding? [-> REnv Type Boolean])
