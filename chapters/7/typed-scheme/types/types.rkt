@@ -165,6 +165,12 @@
             [t2 (desugar-type t2)])
         (or (equal? t1 t2)
             (match* (t1 t2)
+              [(`(Values ,As ...)
+                `(Values ,Bs ...))
+               #:when (and ((listof? type?) As)
+                           ((listof? type?) Bs)
+                           (= (length As) (length Bs)))
+               (andmap =: As Bs)]
               [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
                (and (=: A1 A2) (=: B1 B2))]
               [(`(Listof ,A1) `(Listof ,A2))
@@ -189,6 +195,31 @@
         [('True  'Boolean) #t]
         [('False 'Boolean) #t]
         [('Natural 'Real) #t]
+        [(`(Values ,As ... ,A* *)
+          `(Values ,Bs ... ,B* *))
+         #:when (and ((listof? type?) As)
+                     (type? A*)
+                     ((listof? type?) Bs)
+                     (type? B*)
+                     (<= (length As) (length Bs)))
+         (and (andmap <=: As Bs)
+              (<=: A* B*)
+              (andmap (curry <=: A*) (list-tail Bs (length As))))]
+        [(`(Values ,As ...)
+          `(Values ,Bs ... ,B* *))
+         #:when (and ((listof? type?) As)
+                     (not (eq? '* (car (last-pair As))))
+                     ((listof? type?) Bs)
+                     (type? B*)
+                     (>= (length As) (length Bs)))
+         (and (andmap <=: As Bs)
+              (andmap (curry >=: B*) (list-tail As (length Bs))))]
+        [(`(Values ,As ...)
+          `(Values ,Bs ...))
+         #:when (and ((listof? type?) As)
+                     ((listof? type?) Bs)
+                     (= (length As) (length Bs)))
+         (andmap <=: As Bs)]
         [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
          (and (not (=: t1 t2))
               (<=: A1 A2)
