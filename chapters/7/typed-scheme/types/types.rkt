@@ -394,7 +394,7 @@
     #:type-name Env)
 
   (define-struct tenv
-    ([type  : (U 'empty-tenv 'extend-tenv 'extend-tenv-rec)]
+    ([type  : (U 'empty-tenv 'extend-tenv)]
      [binds : (Immutable-HashTable Symbol Type)])
     #:type-name TEnv)
 
