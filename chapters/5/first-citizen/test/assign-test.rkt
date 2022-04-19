@@ -100,6 +100,17 @@
             (set! b -1)
             (displayln (format "After : a = ~a, b = ~a" a b)))
 
+          (begin
+            (define a 1)
+            (define b &a)
+            (define c &b)
+            (define d &c)
+            (define e &d)
+            (define f &e)
+
+            (pretty-print (list a *b **c ***d ****e *****f))
+            (pretty-print (list a b c d e f)))
+
           #;(let ([n (read)])
               (displayln n))
           ))])
