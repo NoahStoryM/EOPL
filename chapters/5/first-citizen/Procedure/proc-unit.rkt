@@ -19,12 +19,20 @@
   (: procedure [-> (U Symbol (Listof Symbol)) Exp Env Proc])
   (define procedure
     (λ (vars body env)
-      (make-proc vars
-                 body
-                 (extend-env-bind+ (free-binds (if (symbol? vars) (list vars) vars)
-                                               body env)
-                                   (empty-env))
-                 )))
+      (make-proc
+       vars body
+       (extend-env-bind+
+        (free-binds
+         (if (symbol? vars)
+             (list vars)
+             (for/list : (Listof Symbol)
+                       ([var (in-list vars)])
+               (define-values (1st oth) (desugar-variable var))
+               (case 1st
+                 [(#\&) oth]
+                 [else var])))
+         body env)
+        (empty-env)))))
 
 
   (: trace-proc? [-> Any Boolean : Trace-Proc])
@@ -33,12 +41,20 @@
   (: trace-procedure [-> (U Symbol (Listof Symbol)) Exp Env Trace-Proc])
   (define trace-procedure
     (λ (vars body env)
-      (make-trace-proc vars
-                       body
-                       (extend-env-bind+ (free-binds (if (symbol? vars) (list vars) vars)
-                                                     body env)
-                                         (empty-env))
-                       )))
+      (make-trace-proc
+       vars body
+       (extend-env-bind+
+        (free-binds
+         (if (symbol? vars)
+             (list vars)
+             (for/list : (Listof Symbol)
+                       ([var (in-list vars)])
+               (define-values (1st oth) (desugar-variable var))
+               (case 1st
+                 [(#\&) oth]
+                 [else var])))
+         body env)
+        (empty-env)))))
 
   (: apply-procedure/k [-> Proc (Listof DenVal) Cont FinalAnswer])
   (define apply-procedure/k
@@ -54,21 +70,32 @@
                                          [-> Symbol DenVal (Pair Symbol DenVal)])
                                     vars vals)))))
 
-      (value-of/k (proc-body proc)
-                  (if (symbol? vars)
-                      (extend-env  vars vals
-                                   (proc-saved-env proc))
-                      (extend-env* vars vals
-                                   (proc-saved-env proc)))
-                  (cons (frame 'apply-procedure-frame
-                               (inherit-handlers-cont cont)
-                               (ann (λ (cont)
-                                      (λ (result)
-                                        (when (trace-proc? proc)
-                                          (displayln (format "result: ~a\n" result)))
-                                        (apply-cont cont result)))
-                                    [-> Cont [-> ExpVal FinalAnswer]]))
-                        cont))))
+      (value-of/k
+       (proc-body proc)
+       (if (symbol? vars)
+           (extend-env vars vals (proc-saved-env proc))
+           (extend-env-bind+
+            (for/list : (Listof (Pair Symbol (Boxof DenVal)))
+                      ([var (in-list vars)]
+                       [val (in-list vals)])
+              (cond [(denbox? val)
+                     (define-values (1st oth) (desugar-variable var))
+                     (case 1st
+                       [(#\&) (cons oth val)]
+                       [else (cons var ((inst box DenVal) val))])]
+                    [else (cons var ((inst box DenVal) val))]))
+            (proc-saved-env proc)))
+       (cons
+        (frame
+         'apply-procedure-frame
+         (inherit-handlers-cont cont)
+         (ann (λ (cont)
+                (λ (result)
+                  (when (trace-proc? proc)
+                    (displayln (format "result: ~a\n" result)))
+                  (apply-cont cont result)))
+              [-> Cont [-> ExpVal FinalAnswer]]))
+        cont))))
 
 
   (: free-binds [-> (Listof Symbol) Exp Env (Listof (Pair Symbol (Boxof DenVal)))])
@@ -86,9 +113,17 @@
          '()]
 
         [(var-exp var)
-         (if (memq var vars)
-             '()
-             (list (cons var (apply-env-ref env var))))]
+         (define-values (1st oth) (desugar-variable var))
+         (case 1st
+           [(#\*) (free-binds vars (var-exp oth) env)]
+           [else
+            (define v
+              (case 1st
+                [(#\&) oth]
+                [else var]))
+            (if (memq v vars)
+                '()
+                (list (cons v (apply-env-ref env v))))])]
 
         [(begin-exp exps)
          (define curr-free-binds (free-binds vars (car exps) env))
@@ -110,14 +145,11 @@
                      env)]
 
         [(let-exp bind-vars bind-exps body)
-         (cond [(or (null? bind-vars) (null? bind-exps))
-                (free-binds vars body env)]
-               [else
-                (define args-free-binds (free-binds vars (begin-exp bind-exps) env))
-                (define new-env (extend-env-bind+ args-free-binds env))
-                (define body-free-binds (free-binds (append vars bind-vars) body new-env))
-
-                (append args-free-binds body-free-binds)])]
+         (free-binds vars
+                     (if (or (null? bind-vars) (null? bind-exps))
+                         body
+                         (call-exp (proc-exp bind-vars body) bind-exps))
+                     env)]
         [(letrec-exp bind-vars bind-exps body)
          (define new-env
            (extend-env+ (map (ann (λ (var) (cons var undefined))
@@ -153,9 +185,13 @@
         [(proc-exp proc-vars body)
          (free-binds (if (symbol? proc-vars)
                          (cons proc-vars vars)
-                         (append proc-vars vars))
-                     body
-                     env)]
+                         (for/fold ([vars : (Listof Symbol) vars])
+                                   ([var (in-list proc-vars)])
+                           (define-values (1st oth) (desugar-variable var))
+                           (case 1st
+                             [(#\&) (cons oth vars)]
+                             [else  (cons var vars)])))
+                     body env)]
         [(call-exp rator rands)
          (free-binds vars
                      (begin-exp (if (var-exp? rands)

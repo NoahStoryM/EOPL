@@ -88,6 +88,22 @@
           [`(,val) (s-expval->expval (func val))]
           [_ (error 'unary-func "Bad args: ~s" vals)]))))
 
+  (: unary-pred [-> Symbol [-> Any Boolean] [-> DenVal * ExpVal]])
+  (define unary-pred
+    (λ (name pred)
+      (λ vals
+        (match vals
+          [`(,val) (bool-val (pred (expval->denval val)))]
+          [_ (error name "Bad args: ~s" vals)]))))
+
+  (: unary-destruct (All (A) [-> Symbol (pred A) [-> A DenVal] [-> DenVal * ExpVal]]))
+  (define unary-destruct
+    (λ (name pred destruct)
+      (λ vals
+        (match vals
+          [`(,val) #:when (pred val) (destruct val)]
+          [_ (error name "Bad args: ~s" vals)]))))
+
 
   (: binary-equal-relation [-> [-> Any Any Boolean] [-> DenVal * ExpVal]])
   (define binary-equal-relation
@@ -234,6 +250,21 @@
                                (match vals
                                  [`(,val-1 ,val-2) (pair-val (cons val-1 val-2))]
                                  [_ (error 'binary-func "Bad args: ~s" vals)])))
+
+  (add-primitive-proc! 'box?  (unary-pred 'box? box?))
+  (add-primitive-proc! 'unbox (unary-destruct 'unbox denbox? (inst unbox DenVal)))
+  (add-primitive-proc! 'box
+                       (λ [vals : DenVal *] : ExpVal
+                         (match vals
+                           [`(,val-1) (box-val (box val-1))]
+                           [_ (error 'box "Bad args: ~s" vals)])))
+
+  (add-primitive-proc! 'set-box!
+                       (λ [vals : DenVal *] : ExpVal
+                         (match vals
+                           [`(,val-1 ,val-2) #:when (denbox? val-1) (set-box! val-1 val-2)]
+                           [_ (error 'set-box! "Bad args: ~s" vals)])))
+
 
 
   (add-primitive-proc! '+ (n-ary-arithmetic-func +))

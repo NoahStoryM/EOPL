@@ -75,6 +75,16 @@
   (define final-answer? (λ (arg) (expval? arg)))
 
 
+  (: desugar-variable [-> Symbol (Values (Option Char) Symbol)])
+  (define desugar-variable
+    (λ (var)
+      (define s (symbol->string var))
+      (if (< (string-length s) 1)
+          (values #f var)
+          (values (string-ref s 0)
+                  (string->symbol (substring s 1))))))
+
+
   (: listof? (All (A) (case-> [-> (pred A) (pred (Listof A))]
                               [-> [-> Any Boolean] [-> Any Boolean]])))
   (define listof?

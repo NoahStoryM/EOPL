@@ -113,7 +113,24 @@
   (: apply-env [-> Env Symbol DenVal])
   (define apply-env
     (λ (env var)
-      (unbox (apply-env-ref env var))))
+      (define s (symbol->string var))
+      (define star-num
+        (for/fold ([n : Natural 0])
+                  ([c (in-string s)]
+                   [i : Natural (in-naturals 1)]
+                   #:break (not (char=? c #\*)))
+          i))
+      (cond [(= star-num (string-length s))
+             (unbox (apply-env-ref env var))]
+            [else
+             (define v (string->symbol (substring s star-num)))
+             (define-values (1st oth) (desugar-variable v))
+             (for/fold ([res : DenVal
+                             (case 1st
+                               [(#\&) (apply-env-ref env oth)]
+                               [else  (unbox (apply-env-ref env v))])])
+                       ([i (in-range star-num)])
+               (unbox (assert res denbox?)))])))
 
 
   (: has-binding? [-> Env Symbol Boolean])
