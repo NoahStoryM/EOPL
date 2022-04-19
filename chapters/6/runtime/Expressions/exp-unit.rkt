@@ -1,7 +1,6 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../Reference/ref-sig.rkt"
          "../Continuation/cont-sig.rkt"
          "../Thread/thd-sig.rkt"
          "../Scheduler/sche-sig.rkt"
@@ -15,7 +14,7 @@
 
 
 (define-unit exp@
-  (import ref^ cont^ thd^ sche^ mut^ values^ env^ proc^)
+  (import cont^ thd^ sche^ mut^ values^ env^ proc^)
   (export exp^)
 
 

@@ -4,8 +4,6 @@
          "../Parse/parser.rkt"
          "../Parse/desugar.rkt"
          "../Parse/auto-cps.rkt"
-         "../Reference/ref-sig.rkt"
-         "../Reference/ref-unit.rkt"
          "../Continuation/cont-sig.rkt"
          "../Continuation/cont-unit.rkt"
          "../Thread/thd-sig.rkt"
@@ -32,12 +30,12 @@
 
 (define-compound-unit/infer base@
   (import)
-  (export ref^ cont^ thd^ sche^ mut^ values^ env^ proc^ exp^)
-  (link   ref@ cont@ thd@ sche@ mut@ values@ env@ proc@ exp@))
+  (export cont^ thd^ sche^ mut^ values^ env^ proc^ exp^)
+  (link   cont@ thd@ sche@ mut@ values@ env@ proc@ exp@))
 
 (define-values/invoke-unit base@
   (import)
-  (export ref^ cont^ thd^ sche^ mut^ values^ env^ proc^ exp^))
+  (export cont^ thd^ sche^ mut^ values^ env^ proc^ exp^))
 
 
 (define-namespace-anchor ns-anchor)

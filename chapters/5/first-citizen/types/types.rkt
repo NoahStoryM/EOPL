@@ -12,7 +12,7 @@
   (define-predicate true? True)
 
 
-  (define-type Literal (U Boolean Real Symbol Char String))
+  (define-type Literal (U Boolean Real Char String Bytes))
   (define-predicate literal? Literal)
 
   (define-type S-List (Listof S-Exp))
@@ -30,7 +30,7 @@
   (define-predicate trace-lambda? Trace-Lambda)
 
 
-  (define-type DenVal (U Literal Undefined Void Null
+  (define-type DenVal (U Literal Symbol Keyword Undefined Void Null
                          Primitive-Proc Proc Trace-Proc
                          Cont Mutex Thread-Identifier
                          (Queueof DenVal)
@@ -46,6 +46,7 @@
     (λ (arg)
       (or (literal? arg)
           (symbol? arg)
+          (keyword? arg)
           (undefined? arg)
           (void? arg)
           (null? arg)

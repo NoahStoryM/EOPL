@@ -14,5 +14,5 @@
    [trace-procedure : [-> (U Symbol (Listof Symbol)) Exp Env Trace-Proc]]
 
    [apply-procedure/k : [-> Proc (Listof DenVal) Cont FinalAnswer]]
-   [free-binds : [-> (Listof Symbol) Exp Env (Listof (Pair Symbol Ref))]]
+   [free-binds : [-> (Listof Symbol) Exp Env (Listof (Pair Symbol (Boxof DenVal)))]]
    ))
