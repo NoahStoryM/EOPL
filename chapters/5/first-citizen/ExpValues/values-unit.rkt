@@ -25,17 +25,23 @@
   (: string-val [-> String DenVal])
   (define string-val (λ (str) str))
 
-  (: pair-val [-> (Pair DenVal DenVal) DenVal])
-  (define pair-val (λ (pair) pair))
-
-  (: list-val [-> (Listof DenVal) DenVal])
-  (define list-val (λ (ls) ls))
-
   (: proc-val [-> Proc DenVal])
   (define proc-val (λ (proc) proc))
 
   (: primitive-proc-val [-> Primitive-Proc DenVal])
   (define primitive-proc-val (λ (primitive-proc) primitive-proc))
+
+  (: queue-val [-> (Queueof DenVal) DenVal])
+  (define queue-val (λ (queue) queue))
+
+  (: box-val [-> (Boxof DenVal) DenVal])
+  (define box-val (λ (bx) bx))
+
+  (: pair-val [-> (Pairof DenVal DenVal) DenVal])
+  (define pair-val (λ (pair) pair))
+
+  (: list-val [-> (Listof DenVal) DenVal])
+  (define list-val (λ (ls) ls))
 
   (: mutex-val [-> Mutex DenVal])
   (define mutex-val (λ (mut) mut))
@@ -56,18 +62,23 @@
   (: expval->string [-> ExpVal String])
   (define expval->string (λ (val) (assert val string?)))
 
-  (: expval->pair [-> ExpVal (Pair DenVal DenVal)])
-  (define expval->pair (λ (val) (assert val denpair?)))
-
-  (: expval->list [-> ExpVal (Listof DenVal)])
-  (define expval->list (λ (val) (assert val denlist?)))
-
   (: expval->proc [-> ExpVal Proc])
   (define expval->proc (λ (val) (assert val proc?)))
 
   (: expval->primitive-proc [-> ExpVal Primitive-Proc])
   (define expval->primitive-proc (λ (val) (assert val primitive-proc?)))
 
+  (: expval->queue [-> ExpVal (Queueof DenVal)])
+  (define expval->queue (λ (val) (assert val (queueof? denval?))))
+
+  (: expval->box [-> ExpVal (Boxof DenVal)])
+  (define expval->box (λ (val) (assert val denbox?)))
+
+  (: expval->pair [-> ExpVal (Pairof DenVal DenVal)])
+  (define expval->pair (λ (val) (assert val denpair?)))
+
+  (: expval->list [-> ExpVal (Listof DenVal)])
+  (define expval->list (λ (val) (assert val (listof? denval?))))
   (: expval->mutex [-> ExpVal Mutex])
   (define expval->mutex (λ (val) (assert val mutex?)))
 
@@ -75,6 +86,9 @@
   (: expval->denval [-> ExpVal DenVal])
   (define expval->denval (λ (val) (assert val denval?)))
 
+
+  (: s-expval->denval [-> Any DenVal])
+  (define s-expval->denval (λ (val) (assert val denval?)))
 
   (: s-expval->expval [-> Any ExpVal])
   (define s-expval->expval (λ (val) (assert val expval?)))

@@ -1,269 +1,337 @@
 #lang typed/racket
 
-(require/typed racket/undefined
-  [undefined Undefined])
 
-(provide undefined (all-defined-out))
+(module types typed/racket
+  (require/typed racket/undefined
+    [undefined Undefined])
 
+  (provide undefined (all-defined-out))
 
-(define-predicate undefined? Undefined)
-(define-predicate true? True)
 
+  (define-predicate undefined? Undefined)
+  (define-predicate true? True)
 
-(define-type Literal (U Boolean Real Symbol Char String))
 
-(define-type S-List (Listof S-Exp))
-(define-type S-Exp (U Literal S-List))
+  (define-type Literal (U Boolean Real Symbol Char String))
+  (define-predicate literal? Literal)
 
-(define-predicate s-exp?  S-Exp)
-(define-predicate s-list? S-List)
+  (define-type S-List (Listof S-Exp))
+  (define-type S-Exp (U Literal S-List))
+
+  (define-predicate s-exp?  S-Exp)
+  (define-predicate s-list? S-List)
 
-(define-type Lambda (U 'lambda 'λ))
-(define-predicate λ? Lambda)
-(define-predicate lambda? Lambda)
+  (define-type Lambda (U 'lambda 'λ))
+  (define-predicate λ? Lambda)
+  (define-predicate lambda? Lambda)
 
-(define-type Trace-Lambda (U 'trace-lambda 'trace-λ))
-(define-predicate trace-λ? Trace-Lambda)
-(define-predicate trace-lambda? Trace-Lambda)
+  (define-type Trace-Lambda (U 'trace-lambda 'trace-λ))
+  (define-predicate trace-λ? Trace-Lambda)
+  (define-predicate trace-lambda? Trace-Lambda)
+
+
+  (define-type DenVal (U Literal Undefined Void Null
+                         Primitive-Proc Proc Trace-Proc
+                         Cont Mutex Thread-Identifier
+                         (Queueof DenVal)
+
+                         (Boxof  DenVal)
+                         (Pairof DenVal DenVal)))
+  (define-type ExpVal DenVal)
+  (define-new-subtype FinalAnswer (final-answer ExpVal))
 
 
-(define-type DenVal (U Literal Undefined
-                       Primitive-Proc
-                       Proc Trace-Proc
-                       Cont Mutex Thread-Identifier
-                       Null (Pair DenVal DenVal)))
-(define-predicate denval?  DenVal)
-(define-predicate denpair? (Pair DenVal DenVal))
-(define-predicate denlist? (Listof DenVal))
+  (: denval? [-> Any Boolean])
+  (define denval?
+    (λ (arg)
+      (or (literal? arg)
+          (symbol? arg)
+          (undefined? arg)
+          (void? arg)
+          (null? arg)
+          (primitive-proc? arg)
+          (proc? arg)
+          (trace-proc? arg)
+          (cont? arg)
+          (mutex? arg)
+          (thread-identifier? arg)
+          ((queueof? denval?) arg)
 
-(define-type ExpVal (U DenVal Void Nothing))
-(define-predicate expval? ExpVal)
+          (denbox? arg)
+          (denpair? arg))))
 
-(define-new-subtype FinalAnswer (final-answer ExpVal))
-(define-predicate final-answer? FinalAnswer)
+  (: denbox? [-> Any Boolean])
+  (define denbox? (λ (arg) (and (box? arg) (denval? (unbox arg)))))
 
+  (: denpair? [-> Any Boolean])
+  (define denpair? (λ (arg) (and (pair? arg) (denval? (car arg)) (denval? (cdr arg)))))
 
-(define-type (Queueof A) (List (Listof A) (Listof A)))
-(define-predicate queue? (Queueof Any))
-(define-predicate empty-queue? (Queueof Nothing))
 
-(: empty-queue [-> (Queueof Nothing)])
-(define empty-queue (let ([empty-q '(() ())]) (λ () empty-q)))
+  (: expval? [-> Any Boolean])
+  (define expval? (λ (arg) (denval? arg)))
 
-(: enqueue (All (A) [-> (Queueof A) A (Queueof A)]))
-(define enqueue
-  (λ (q arg)
-    (match q
-      [`(,in ,out)
-       `((,arg . ,in) ,out)])))
+  (: final-answer? [-> Any Boolean])
+  (define final-answer? (λ (arg) (expval? arg)))
 
-(: dequeue (All (A B) [-> (Queueof A) [-> A (Queueof A) B] B]))
-(define dequeue
-  (λ (q f)
-    (match q
-      ['(() ())
-       (raise-argument-error 'dequeue "non-empty-queue?" q)]
-      [`(,in ())
-       (define l (reverse in))
-       (f (car l) `(() ,(cdr l)))]
-      [`(,in (,1st . ,out))
-       (f 1st `(,in ,out))])))
 
+  (: listof? (All (A) (case-> [-> (pred A) (pred (Listof A))]
+                              [-> [-> Any Boolean] [-> Any Boolean]])))
+  (define listof?
+    (λ (pred)
+      (λ (arg)
+        (and (list? arg)
+             (andmap pred arg)))))
 
-(struct thd
-  ([ptid : Natural]
-   [tid  : Natural]
-   [mail : (Boxof (Queueof DenVal))]
-   [time-slice : Exact-Positive-Integer]
-   [thunk : [-> FinalAnswer]])
-  #:type-name Thd)
+  (: empty-list [-> Null])
+  (define empty-list (λ () '()))
 
-(struct thread-identifier
-  ([tid  : Natural]
-   [ptid : Natural])
-  #:type-name Thread-Identifier)
+  (define-type (Queueof A) (List (Listof A) (Listof A)))
+  (define-predicate queue? (Queueof Any))
+  (define-predicate empty-queue? (Queueof Nothing))
 
-(: thread-share-memory? (Parameter Boolean))
-(define thread-share-memory? (make-parameter #f))
+  (: queueof? (All (A) (case-> [-> (pred A) (pred (Queueof A))]
+                               [-> [-> Any Boolean] [-> Any Boolean]])))
+  (define queueof?
+    (λ (pred)
+      (λ (arg)
+        (and (queue? arg)
+             ((listof? pred) (car  arg))
+             ((listof? pred) (cadr arg))))))
 
+  (: empty-queue [-> (Queueof Nothing)])
+  (define empty-queue (let ([empty-q '(() ())]) (λ () empty-q)))
 
-(define-type Cont (Listof Frame))
-(define-predicate cont? Cont)
+  (: enqueue (All (A) [-> (Queueof A) A (Queueof A)]))
+  (define enqueue
+    (λ (q arg)
+      (match q
+        [`(,in ,out)
+         `((,arg . ,in) ,out)])))
 
-(define-type Handlers-Cont (Pair Handlers-Frame Cont))
-(define-predicate handlers-cont? Handlers-Cont)
+  (: dequeue (All (A B) [-> (Queueof A) [-> A (Queueof A) B] B]))
+  (define dequeue
+    (λ (q f)
+      (match q
+        ['(() ())
+         (raise-argument-error 'dequeue "non-empty-queue?" q)]
+        [`(,in ())
+         (define l (reverse in))
+         (f (car l) `(() ,(cdr l)))]
+        [`(,in (,1st . ,out))
+         (f 1st `(,in ,out))])))
 
-(struct frame
-  ([type : Symbol]
-   [handlers-cont : (Option Handlers-Cont)]
-   [func : [-> Cont [-> ExpVal FinalAnswer]]])
-  #:type-name Frame)
 
-(struct handlers-frame frame
-  ([preds    : (Listof Proc)]
-   [handlers : (Listof Proc)])
-  #:type-name Handlers-Frame)
+  (struct thd
+    ([ptid : Natural]
+     [tid  : Natural]
+     [mail : (Boxof (Queueof DenVal))]
+     [time-slice : Exact-Positive-Integer]
+     [thunk : [-> FinalAnswer]])
+    #:type-name Thd)
 
+  (struct thread-identifier
+    ([tid  : Natural]
+     [ptid : Natural])
+    #:type-name Thread-Identifier)
 
-(define-struct ref
-  ([val : DenVal])
-  #:mutable
-  #:type-name Ref)
+  (: thread-share-memory? (Parameter Boolean))
+  (define thread-share-memory? (make-parameter #f))
 
-(define-struct env
-  ([type  : (U 'empty-env 'extend-env 'extend-env-rec)]
-   [binds : (Immutable-HashTable Symbol Ref)])
-  #:type-name Env)
 
+  (define-type Cont (Listof Frame))
+  (define-predicate cont? Cont)
 
-(define-struct primitive-proc
-  ([λ : [-> DenVal * ExpVal]])
-  #:type-name Primitive-Proc)
+  (define-type Handlers-Cont (Pair Handlers-Frame Cont))
+  (define-predicate handlers-cont? Handlers-Cont)
 
-(define-struct proc
-  ([vars : (U Symbol (Listof Symbol))]  ; Symbol is used for `apply'.
-   [body : Exp]
-   [saved-env : Env])
-  #:type-name Proc)
+  (struct frame
+    ([type : Symbol]
+     [handlers-cont : (Option Handlers-Cont)]
+     [func : [-> Cont [-> ExpVal FinalAnswer]]])
+    #:type-name Frame)
 
-(define-struct (trace-proc proc) () #:type-name Trace-Proc)
+  (struct handlers-frame frame
+    ([preds    : (Listof Proc)]
+     [handlers : (Listof Proc)])
+    #:type-name Handlers-Frame)
 
 
-(define-struct mutex
-  ([keys : Natural]
-   [wait-queue : (Queueof Natural)])
-  #:mutable
-  #:type-name Mutex)
+  (define-struct env
+    ([type  : (U 'empty-env 'extend-env 'extend-env-rec)]
+     [binds : (Immutable-HashTable Symbol (Boxof DenVal))])
+    #:type-name Env)
 
 
-(define-struct exp () #:type-name Exp)
+  (define-struct primitive-proc
+    ([λ : [-> DenVal * ExpVal]])
+    #:type-name Primitive-Proc)
 
+  (define-struct proc
+    ([vars : (U Symbol (Listof Symbol))]  ; Symbol is used for `apply'.
+     [body : Exp]
+     [saved-env : Env])
+    #:type-name Proc)
 
-(define-struct (assign-exp exp)
-  ([var : Symbol]
-   [exp : Exp])
-  #:type-name Assign-Exp)
+  (define-struct (trace-proc proc) () #:type-name Trace-Proc)
 
 
-(define-struct (symbol-exp exp)
-  ([symbol : Symbol])
-  #:type-name Symbol-Exp)
+  (define-struct mutex
+    ([keys : Natural]
+     [wait-queue : (Queueof Natural)])
+    #:mutable
+    #:type-name Mutex)
 
-(define-struct (real-exp exp)
-  ([num : Real])
-  #:type-name Real-Exp)
 
-(define-struct (bool-exp exp)
-  ([bool : Boolean])
-  #:type-name Bool-Exp)
+  (define-struct exp () #:type-name Exp)
 
-(define-struct (char-exp exp)
-  ([char : Char])
-  #:type-name Char-Exp)
 
-(define-struct (string-exp exp)
-  ([str : String])
-  #:type-name String-Exp)
+  (define-struct (assign-exp exp)
+    ([var : Symbol]
+     [exp : Exp])
+    #:type-name Assign-Exp)
 
 
-(define-struct (if-exp exp)
-  ([pred-exp : Exp]
-   [true-exp : Exp]
-   [false-exp : Exp])
-  #:type-name If-Exp)
+  (define-struct (symbol-exp exp)
+    ([symbol : Symbol])
+    #:type-name Symbol-Exp)
 
-(define-struct (cond-exp exp)
-  ([branches : (Pair (List Exp Exp) (Listof (List Exp Exp)))])
-  #:type-name Cond-Exp)
+  (define-struct (real-exp exp)
+    ([num : Real])
+    #:type-name Real-Exp)
 
+  (define-struct (bool-exp exp)
+    ([bool : Boolean])
+    #:type-name Bool-Exp)
 
-(define-struct (var-exp exp)
-  ([var : Symbol])
-  #:type-name Var-Exp)
+  (define-struct (char-exp exp)
+    ([char : Char])
+    #:type-name Char-Exp)
 
-(define-struct (let-exp exp)
-  ([bind-vars : (Listof Symbol)]
-   [bind-exps : (Listof Exp)]
-   [body : Exp])
-  #:type-name Let-Exp)
+  (define-struct (string-exp exp)
+    ([str : String])
+    #:type-name String-Exp)
 
-(define-struct (letrec-exp exp)
-  ([bind-vars : (Listof Symbol)]
-   [bind-exps : (Listof Exp)]
-   [body : Exp])
-  #:type-name Letrec-Exp)
 
+  (define-struct (if-exp exp)
+    ([pred-exp : Exp]
+     [true-exp : Exp]
+     [false-exp : Exp])
+    #:type-name If-Exp)
 
-(define-struct (let/cc-exp exp)
-  ([cc-var : Symbol]
-   [body : Exp])
-  #:type-name Let/CC-Exp)
+  (define-struct (cond-exp exp)
+    ([branches : (Pair (List Exp Exp) (Listof (List Exp Exp)))])
+    #:type-name Cond-Exp)
 
 
-(define-struct (begin-exp exp)
-  ([exps : (Pair Exp (Listof Exp))])
-  #:type-name Begin-Exp)
+  (define-struct (var-exp exp)
+    ([var : Symbol])
+    #:type-name Var-Exp)
 
+  (define-struct (let-exp exp)
+    ([bind-vars : (Listof Symbol)]
+     [bind-exps : (Listof Exp)]
+     [body : Exp])
+    #:type-name Let-Exp)
 
-(define-struct (proc-exp exp)
-  ([vars : (U Symbol (Listof Symbol))]
-   [body : Exp])
-  #:type-name Proc-Exp)
+  (define-struct (letrec-exp exp)
+    ([bind-vars : (Listof Symbol)]
+     [bind-exps : (Listof Exp)]
+     [body : Exp])
+    #:type-name Letrec-Exp)
 
-(define-struct (trace-proc-exp proc-exp)
-  ()
-  #:type-name Trace-Proc-Exp)
 
-(define-struct (call-exp exp)
-  ([rator : Exp]
-   [rands : (U Var-Exp (Listof Exp))])
-  #:type-name Call-Exp)
+  (define-struct (let/cc-exp exp)
+    ([cc-var : Symbol]
+     [body : Exp])
+    #:type-name Let/CC-Exp)
 
 
-(define-struct (handlers-exp exp)
-  ([catch-preds : (Listof Exp)]
-   [catch-bodys : (Listof Exp)]
-   [body : Exp])
-  #:type-name Handlers-Exp)
+  (define-struct (begin-exp exp)
+    ([exps : (Pair Exp (Listof Exp))])
+    #:type-name Begin-Exp)
 
-(define-struct (raise-exp exp)
-  ([exp : Exp])
-  #:type-name Raise-Exp)
 
+  (define-struct (proc-exp exp)
+    ([vars : (U Symbol (Listof Symbol))]
+     [body : Exp])
+    #:type-name Proc-Exp)
 
-(define-struct (spawn-exp exp)
-  ([exp : Exp])
-  #:type-name Spawn-Exp)
+  (define-struct (trace-proc-exp proc-exp)
+    ()
+    #:type-name Trace-Proc-Exp)
 
-(define-struct (mutex-exp exp)
-  ([exp : Exp])
-  #:type-name Mutex-Exp)
+  (define-struct (call-exp exp)
+    ([rator : Exp]
+     [rands : (U Var-Exp (Listof Exp))])
+    #:type-name Call-Exp)
 
-(define-struct (wait-exp exp)
-  ([exp : Exp])
-  #:type-name Wait-Exp)
 
-(define-struct (signal-exp exp)
-  ([exp : Exp])
-  #:type-name Signal-Exp)
+  (define-struct (handlers-exp exp)
+    ([catch-preds : (Listof Exp)]
+     [catch-bodys : (Listof Exp)]
+     [body : Exp])
+    #:type-name Handlers-Exp)
 
-(define-struct (kill-exp exp)
-  ([exp : Exp])
-  #:type-name Kill-Exp)
+  (define-struct (raise-exp exp)
+    ([exp : Exp])
+    #:type-name Raise-Exp)
 
-(define-struct (send-exp exp)
-  ([tid-exp   : Exp]
-   [value-exp : Exp])
-  #:type-name Send-Exp)
 
-(define-struct (receive-exp exp)
-  ()
-  #:type-name Receive-Exp)
+  (define-struct (spawn-exp exp)
+    ([exp : Exp])
+    #:type-name Spawn-Exp)
 
-(define-struct (try-receive-exp exp)
-  ()
-  #:type-name Try-Receive-Exp)
+  (define-struct (mutex-exp exp)
+    ([exp : Exp])
+    #:type-name Mutex-Exp)
 
-(define-struct (yield-exp exp)
-  ()
-  #:type-name Yield-Exp)
+  (define-struct (wait-exp exp)
+    ([exp : Exp])
+    #:type-name Wait-Exp)
+
+  (define-struct (signal-exp exp)
+    ([exp : Exp])
+    #:type-name Signal-Exp)
+
+  (define-struct (kill-exp exp)
+    ([exp : Exp])
+    #:type-name Kill-Exp)
+
+  (define-struct (send-exp exp)
+    ([tid-exp   : Exp]
+     [value-exp : Exp])
+    #:type-name Send-Exp)
+
+  (define-struct (receive-exp exp)
+    ()
+    #:type-name Receive-Exp)
+
+  (define-struct (try-receive-exp exp)
+    ()
+    #:type-name Try-Receive-Exp)
+
+  (define-struct (yield-exp exp)
+    ()
+    #:type-name Yield-Exp)
+
+  )
+
+
+(require (except-in 'types
+                    denval?
+                    denbox?
+                    denpair?
+
+                    expval?
+                    final-answer?))
+(provide (all-from-out 'types))
+
+(require typed/racket/unsafe)
+(unsafe-require/typed/provide
+ 'types
+ [denval?       (pred DenVal)]
+ [denbox?       (pred (Boxof DenVal))]
+ [denpair?      (pred (Pairof DenVal DenVal))]
+
+ [expval?       (pred ExpVal)]
+ [final-answer? (pred FinalAnswer)])
