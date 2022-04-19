@@ -1,7 +1,6 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../Reference/ref-sig.rkt"
          "../ExpValues/values-sig.rkt"
          "../Procedure/proc-sig.rkt"
          "../Expressions/exp-sig.rkt"
@@ -22,7 +21,7 @@
 
 
 (define-unit env@
-  (import ref^ values^ proc^ exp^)
+  (import values^ proc^ exp^)
   (export env^)
 
 
@@ -40,7 +39,7 @@
   (: extend-env [-> Symbol DenVal Env Env])
   (define extend-env
     (λ (var val saved-env)
-      (extend-env-bind var (newref val) saved-env)))
+      (extend-env-bind var (box val) saved-env)))
 
   (: extend-env* [-> (Listof Symbol) (Listof DenVal) Env Env])
   (define extend-env*
@@ -52,27 +51,27 @@
                                "actual arguments" vals))
 
       (make-env 'extend-env
-                (for/fold ([res : (Immutable-HashTable Symbol Ref)
+                (for/fold ([res : (Immutable-HashTable Symbol (Boxof DenVal))
                                 (env-binds saved-env)])
                           ([var (in-list vars)]
                            [val (in-list vals)])
-                  (hash-set res var (newref val))))))
+                  (hash-set res var (box val))))))
 
   (: extend-env+ [-> (Listof (Pair Symbol DenVal)) Env Env])
   (define extend-env+
     (λ (binds saved-env)
       (make-env 'extend-env
-                (for/fold ([res : (Immutable-HashTable Symbol Ref)
+                (for/fold ([res : (Immutable-HashTable Symbol (Boxof DenVal))
                                 (env-binds saved-env)])
                           ([bind (in-list binds)])
-                  (hash-set res (car bind) (newref (cdr bind)))))))
+                  (hash-set res (car bind) (box (cdr bind)))))))
 
-  (: extend-env-bind [-> Symbol Ref Env Env])
+  (: extend-env-bind [-> Symbol (Boxof DenVal) Env Env])
   (define extend-env-bind
     (λ (var ref saved-env)
       (make-env 'extend-env (hash-set (env-binds saved-env) var ref))))
 
-  (: extend-env-bind* [-> (Listof Symbol) (Listof Ref) Env Env])
+  (: extend-env-bind* [-> (Listof Symbol) (Listof (Boxof DenVal)) Env Env])
   (define extend-env-bind*
     (λ (vars refs saved-env)
       (unless (= (length vars) (length refs))
@@ -82,17 +81,17 @@
                                "actual arguments" refs))
 
       (make-env 'extend-env
-                (for/fold ([res : (Immutable-HashTable Symbol Ref)
+                (for/fold ([res : (Immutable-HashTable Symbol (Boxof DenVal))
                                 (env-binds saved-env)])
                           ([var (in-list vars)]
                            [ref (in-list refs)])
                   (hash-set res var ref)))))
 
-  (: extend-env-bind+ [-> (Listof (Pair Symbol Ref)) Env Env])
+  (: extend-env-bind+ [-> (Listof (Pair Symbol (Boxof DenVal))) Env Env])
   (define extend-env-bind+
     (λ (binds saved-env)
       (make-env 'extend-env
-                (for/fold ([res : (Immutable-HashTable Symbol Ref)
+                (for/fold ([res : (Immutable-HashTable Symbol (Boxof DenVal))
                                 (env-binds saved-env)])
                           ([bind (in-list binds)])
                   (hash-set res (car bind) (cdr bind))))))
@@ -106,7 +105,7 @@
   (define-predicate env? Env)
 
 
-  (: apply-env-ref [->* (Env Symbol) ([-> Ref]) Ref])
+  (: apply-env-ref [->* (Env Symbol) ([-> (Boxof DenVal)]) (Boxof DenVal)])
   (define apply-env-ref
     (case-lambda
       [(env var) (hash-ref (env-binds env) var)]
@@ -115,8 +114,8 @@
   (: apply-env [->* (Env Symbol) ([-> DenVal]) DenVal])
   (define apply-env
     (case-lambda
-      [(env var) (deref (apply-env-ref env var))]
-      [(env var fail-res) (deref (apply-env-ref env var (λ () (newref (fail-res)))))]))
+      [(env var) (unbox (apply-env-ref env var))]
+      [(env var fail-res) (unbox (apply-env-ref env var (λ () (box (fail-res)))))]))
 
 
   (: has-binding? [-> Env Symbol Boolean])
@@ -127,14 +126,14 @@
   (: set-binding! [-> Env Symbol DenVal Void])
   (define set-binding!
     (λ (env var new-val)
-      (setref! (apply-env-ref env var) new-val)))
+      (set-box! (apply-env-ref env var) new-val)))
 
   (: copy-env [-> Env Env])
   (define copy-env
     (λ (saved-env)
       (make-env (env-type saved-env)
-                (for/hasheq : (Immutable-HashTable Symbol Ref)
+                (for/hasheq : (Immutable-HashTable Symbol (Boxof DenVal))
                             ([(k v) (in-hash (env-binds saved-env))])
-                  (values k (newref (deref v)))))))
+                  (values k (box (unbox v)))))))
 
   )

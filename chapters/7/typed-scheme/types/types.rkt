@@ -369,7 +369,7 @@
     #:type-name Frame)
 
 
-  (define-type DenVal (U Literal Symbol Undefined Void Null
+  (define-type DenVal (U Literal Symbol Keyword Undefined Void Null
                          Cont Primitive-Proc Proc Trace-Proc
                          (Queueof DenVal)
 
@@ -382,15 +382,9 @@
   (define-new-subtype FinalAnswer (final-answer ExpVal))
 
 
-  (define-struct ref
-    ([val : DenVal])
-    #:mutable
-    #:type-name Ref)
-
-
   (define-struct env
     ([type  : (U 'empty-env 'extend-env)]
-     [binds : (Immutable-HashTable Symbol Ref)])
+     [binds : (Immutable-HashTable Symbol (Boxof DenVal))])
     #:type-name Env)
 
   (define-struct tenv
@@ -425,6 +419,7 @@
     (λ (arg)
       (or (literal? arg)
           (symbol? arg)
+          (keyword? arg)
           (undefined? arg)
           (void? arg)
           (null? arg)

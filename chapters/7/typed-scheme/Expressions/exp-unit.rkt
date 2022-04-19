@@ -2,7 +2,6 @@
 
 (require "../types/types.rkt"
          "../Parse/parse.rkt"
-         "../Reference/ref-sig.rkt"
          "../Continuation/cont-sig.rkt"
          "../ExpValues/values-sig.rkt"
          "../Environment/env-sig.rkt"
@@ -25,7 +24,7 @@
 
 
 (define-unit exp@
-  (import ref^ cont^ values^ env^ tenv^ renv^ proc^)
+  (import cont^ values^ env^ tenv^ renv^ proc^)
   (export exp^)
 
 

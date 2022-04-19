@@ -70,7 +70,7 @@
                         cont))))
 
 
-  (: free-binds [-> (Listof Symbol) Exp Env (Listof (Pair Symbol Ref))])
+  (: free-binds [-> (Listof Symbol) Exp Env (Listof (Pair Symbol (Boxof DenVal)))])
   (define free-binds
     (λ (vars exp env)
       (match exp
@@ -100,7 +100,7 @@
          (if (null? next-exps)
              curr-free-binds
              (append curr-free-binds
-                     (free-binds (append (map (inst car Symbol Ref) curr-free-binds) vars)
+                     (free-binds (append (map (inst car Symbol (Boxof DenVal)) curr-free-binds) vars)
                                  (begin-exp next-exps)
                                  env)))]
 
