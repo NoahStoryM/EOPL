@@ -49,7 +49,7 @@
   (define-predicate literal? Literal)
 
 
-  (define-type S-Exp  (U Literal Symbol S-List))
+  (define-type S-Exp  (U Literal Symbol Keyword S-List))
   (define-predicate s-exp?  S-Exp)
   (define-type S-List (Listof S-Exp))
   (define-predicate s-list? S-List)

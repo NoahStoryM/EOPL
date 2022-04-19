@@ -31,10 +31,10 @@
 (define-predicate true? True)
 
 
-(define-type Literal (U Boolean Real Symbol Char String))
+(define-type Literal (U Boolean Real Char String Bytes))
 
 
-(define-type S-Exp  (U Literal S-List))
+(define-type S-Exp  (U Literal Symbol Keyword S-List))
 (define-predicate s-exp?  S-Exp)
 (define-type S-List (Listof S-Exp))
 (define-predicate s-list? S-List)
@@ -52,7 +52,7 @@
 (define-predicate trace-lambda? Trace-Lambda)
 
 
-(define-type DenVal (U Literal Undefined
+(define-type DenVal (U Literal Symbol Keyword Undefined
                        Primitive-Proc
                        Proc Trace-Proc
                        Cont Mutex Thread-Identifier
