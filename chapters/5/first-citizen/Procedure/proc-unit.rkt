@@ -114,16 +114,15 @@
 
         [(var-exp var)
          (define-values (1st oth) (desugar-variable var))
-         (case 1st
-           [(#\*) (free-binds vars (var-exp oth) env)]
-           [else
-            (define v
-              (case 1st
-                [(#\&) oth]
-                [else var]))
-            (if (memq v vars)
-                '()
-                (list (cons v (apply-env-ref env v))))])]
+         (define v
+           (if (symbol=? oth '||)
+               var
+               (case 1st
+                 [(#\& #\*) oth]
+                 [else var])))
+         (if (memq v vars)
+             '()
+             (list (cons v (apply-env-ref env v))))]
 
         [(begin-exp exps)
          (define curr-free-binds (free-binds vars (car exps) env))
