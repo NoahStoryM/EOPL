@@ -325,6 +325,11 @@
                       [else (+ (fib (- num 1))
                                (fib (- num 2)))])))
             (fib 2))
+          (let fib ([num 2])
+            (cond [(= 0 num) 0]
+                  [(= 1 num) 1]
+                  [else (+ (fib (- num 1))
+                           (fib (- num 2)))]))
 
           (and)
           (or)
