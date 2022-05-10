@@ -38,6 +38,7 @@
        #:when (and (s-exp? exp1) (s-exp? exp2))
        (desugar exp2)]
 
+      ['(cond) '(void)]
       [`(cond [,pred-exp ,body-exp ,body-exp* ...]
               ,next ...)
        #:when (and (s-exp? pred-exp)
@@ -51,9 +52,7 @@
              ,(if (null? body-exp*)
                   body-exp
                   `(begin ,body-exp ,@body-exp*))
-             ,(if (null? next)
-                  '(void)
-                  `(cond ,@next))))]
+             (cond ,@next)))]
 
       [`(and ,exps ...)
        #:when ((listof? s-exp?) exps)
