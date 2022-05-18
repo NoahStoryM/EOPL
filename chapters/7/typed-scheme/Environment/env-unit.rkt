@@ -1,9 +1,6 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../ExpValues/values-sig.rkt"
-         "../Procedure/proc-sig.rkt"
-         "../Expressions/exp-sig.rkt"
          "env-sig.rkt")
 
 (provide env@)
@@ -21,7 +18,7 @@
 
 
 (define-unit env@
-  (import values^ proc^ exp^)
+  (import)
   (export env^)
 
 

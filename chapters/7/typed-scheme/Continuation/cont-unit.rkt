@@ -1,15 +1,13 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../ExpValues/values-sig.rkt"
-         "../Procedure/proc-sig.rkt"
          "cont-sig.rkt")
 
 (provide cont@)
 
 
 (define-unit cont@
-  (import values^ proc^)
+  (import)
   (export cont^)
 
   (: id-cont [-> Null])

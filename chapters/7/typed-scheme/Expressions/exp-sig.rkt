@@ -7,6 +7,7 @@
 
 (define-signature exp^
   (
-   [value-of/k : [-> Exp Env Cont FinalAnswer]]
-   [type-of    : [-> Exp TEnv REnv (Option Type) Type]]
+   [value-of/k        : [-> Exp Env Cont FinalAnswer]]
+   [apply-procedure/k : [-> Proc (Listof DenVal) Cont FinalAnswer]]
+   [type-of           : [-> Exp TEnv REnv (Option Type) Type]]
    ))
