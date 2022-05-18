@@ -63,6 +63,11 @@
           (car (cons 1 "2"))
           (cdr (cons 1 "2"))
 
+          (begin
+            (: sum [-> [-> Real * Real] Real Real Real])
+            (define sum (λ (s r1 r2) (s r1 r2)))
+            (sum + 1 2))
+
           ;;; Type mismatch cases:
           #;(begin
               (: dio Boolean)

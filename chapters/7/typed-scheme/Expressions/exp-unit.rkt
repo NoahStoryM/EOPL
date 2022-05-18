@@ -1,7 +1,6 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../Parse/parse.rkt"
          "../Continuation/cont-sig.rkt"
          "../ExpValues/values-sig.rkt"
          "../Environment/env-sig.rkt"

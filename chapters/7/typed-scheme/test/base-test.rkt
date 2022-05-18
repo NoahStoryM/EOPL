@@ -122,5 +122,10 @@
             ((inst pdisplayln String) "123")
             ((inst pdisplayln Symbol) '|123|)
             ((inst pdisplayln Any) '123))
+
+          (begin
+            (: sum [-> [-> Real * Real] Real Real Real])
+            (define sum (λ (s r1 r2) (s r1 r2)))
+            (sum + 1 2))
           ))])
   (displayln (format "test ~a: ~a" i (*check-code* code (base-env) eval-ns))))

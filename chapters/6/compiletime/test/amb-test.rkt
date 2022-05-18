@@ -19,5 +19,6 @@
   (pretty-print code)
   (pretty-print (desugar code))
   (pretty-print (auto-cps (desugar code)))
+  (pretty-print (desugar (auto-cps (desugar code))))
   (displayln (*eval* code (base-env) (id-cont)))
   (newline))
