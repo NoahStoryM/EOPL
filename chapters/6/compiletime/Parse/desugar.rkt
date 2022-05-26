@@ -134,22 +134,14 @@
                     `(begin ,body-exp ,@body-exp*))
                (cond ,@next)))]
 
-        [`(and ,exps ...)
-         #:when ((listof? s-exp?) exps)
-         (if (null? exps)
-             #t
-             (desugar
-              `(if ,(car exps)
-                   (and ,@(cdr exps))
-                   #f)))]
-        [`(or ,exps ...)
-         #:when ((listof? s-exp?) exps)
-         (if (null? exps)
-             #f
-             (desugar
-              `(if ,(car exps)
-                   #t
-                   (or ,@(cdr exps)))))]
+        ['(and) #t]
+        [`(and ,exp ,exps ...)
+         #:when (and (s-exp? exp) ((listof? s-exp?) exps))
+         (desugar `(if ,exp (and ,@exps) #f))]
+        ['(or) #f]
+        [`(or ,exp ,exps ...)
+         #:when (and (s-exp? exp) ((listof? s-exp?) exps))
+         (desugar `(if ,exp #t (or ,@exps)))]
 
         ['(amb) '(*amb*)]
         [`(amb ,exp) #:when (s-exp? exp) (desugar exp)]
