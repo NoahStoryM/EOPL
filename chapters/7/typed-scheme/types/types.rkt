@@ -57,11 +57,20 @@
   (define-type Ann-S-Exp (U Literal (List 'ann S-Exp Type)))
   (define-predicate ann-s-exp? Ann-S-Exp)
 
-  (define-type Type (U Keyword Symbol Types))
+  (define-type Type (U Keyword Symbol Literal Types))
   (define-predicate type? Type)
 
   (define-type Types (Listof Type))
   (define-predicate types? Types)
+
+  (define-type Prop (U 'Top 'Bot
+                       Type (List '! Type)
+                       (List    Type '@ (Rec Pos (U (List (Option Index)) (Pair (U 'car 'cdr) Pos))))
+                       (List '! Type '@ (Rec Pos (U (List (Option Index)) (Pair (U 'car 'cdr) Pos))))
+                       (Pair 'and     (Listof Prop))
+                       (Pair 'or      (Listof Prop))
+                       (Pair 'implies (Listof Prop))))
+  (define-predicate prop? Prop)
 
 
   (define-type Lambda (U 'lambda 'λ))
@@ -253,12 +262,31 @@
         [_ #f])))
 
 
+  (: desugar-prop [-> Prop Prop])
+  (define desugar-prop
+    (let ()
+      (define-predicate path-elem? (U 'car 'cdr))
+      (λ (prop)
+        (match prop
+          [`(  ,type @ ,path-elems ... ,index)
+           #:when (and (type? type)
+                       ((listof? path-elem?) path-elems)
+                       ((or/c index? false?) index))
+           `(  ,(desugar-type type) @ ,@path-elems ,index)]
+          [`(! ,type @ ,path-elems ... ,index)
+           #:when (and (type? type)
+                       ((listof? path-elem?) path-elems)
+                       ((or/c index? false?) index))
+           `(! ,(desugar-type type) @ ,@path-elems ,index)]
+          [type       #:when (type? type) `(  ,type @ 0)]
+          [`(! ,type) #:when (type? type) `(! ,type @ 0)]
+          [_ prop]))))
+
   (: desugar-type [-> Type Type])
   (define desugar-type
     (λ (type)
       (match type
         [`(Values ,T) #:when (type? T) (desugar-type T)]
-        [`(! (! ,T))  #:when (type? T) (desugar-type T)]
 
 
         [`(All () ,T) #:when (type? T) (desugar-type T)]
@@ -293,64 +321,54 @@
                 ,(desugar-type `(List* ,@A*)))]
 
 
-        ['[->] '[-> (Values) (Values) : #:+ Top #:- Bot]]
         [`[-> (Values ,I ...) (Values ,O ...) : #:+ ,T #:- ,F]
          #:when (and ((listof? type?) I)
                      ((listof? type?) O)
-                     (type? T)
-                     (type? F))
+                     (prop? T)
+                     (prop? F))
          `[-> (Values ,@(map desugar-type I))
               (Values ,@(map desugar-type O))
               :
-              #:+ ,(desugar-type T)
-              #:- ,(desugar-type F)]]
+              #:+ ,(desugar-prop T)
+              #:- ,(desugar-prop F)]]
         [`[-> ,I ... (Values ,O ...) : #:+ ,T #:- ,F]
          #:when (and ((listof? type?) I)
                      ((listof? type?) O)
-                     (type? T)
-                     (type? F))
-         `[-> (Values ,@(map desugar-type I))
-              (Values ,@(map desugar-type O))
-              :
-              #:+ ,(desugar-type T)
-              #:- ,(desugar-type F)]]
+                     (prop? T)
+                     (prop? F))
+         (desugar-type `[-> (Values ,@I) (Values ,@O) : #:+ ,T #:- ,F])]
         [`[-> ,I ... ,O : #:+ ,T #:- ,F]
          #:when (and ((listof? type?) I)
                      (type? O)
-                     (type? T)
-                     (type? F))
-         `[-> (Values ,@(map desugar-type I))
-              (Values ,(desugar-type O))
-              :
-              #:+ ,(desugar-type T)
-              #:- ,(desugar-type F)]]
+                     (prop? T)
+                     (prop? F))
+         (desugar-type `[-> (Values ,@I) (Values  ,O) : #:+ ,T #:- ,F])]
         [`[-> ,I ... ,O : #:- ,F #:+ ,T]
          #:when (and ((listof? type?) I)
                      (type? O)
-                     (type? T)
-                     (type? F))
+                     (prop? T)
+                     (prop? F))
          (desugar-type `[-> ,I ... ,O : #:+ ,T #:- ,F])]
         [`[-> ,I ... ,O : #:+ ,T]
          #:when (and ((listof? type?) I)
                      (type? O)
-                     (type? T))
+                     (prop? T))
          (desugar-type `[-> ,@I ,O : #:+ ,T #:- Top])]
         [`[-> ,I ... ,O : #:- ,F]
          #:when (and ((listof? type?) I)
                      (type? O)
-                     (type? F))
+                     (prop? F))
          (desugar-type `[-> ,@I ,O : #:+ Top #:- ,F])]
-        [`[-> ,I ... ,O : (! ,B)]
+        [`[-> ,I ... ,O : ,P]
          #:when (and ((listof? type?) I)
                      (type? O)
-                     (type? B))
-         (desugar-type `[-> ,@I ,O : #:+ (! ,B) #:- ,B])]
-        [`[-> ,I ... ,O : ,B]
-         #:when (and ((listof? type?) I)
-                     (type? O)
-                     (type? B))
-         (desugar-type `[-> ,@I ,O : #:+ ,B #:- (! ,B)])]
-        [`[-> ,I ... ,O]
+                     (type? P))
+         (desugar-type `[-> ,@I ,O : #:+ ,P #:- (! ,P)])]
+        ['[->] (desugar-type '[-> (Values) (Values)])]
+        [`[-> ,O]
+         #:when (type? O)
+         (desugar-type `[-> ,O : #:+ (Top @ #f) #:- (Top @ #f)])]
+        [`[-> ,I ..1 ,O]
          #:when (and ((listof? type?) I)
                      (type? O))
          (desugar-type `[-> ,@I ,O : #:+ Top #:- Top])]

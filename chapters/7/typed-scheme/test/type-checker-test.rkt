@@ -36,6 +36,10 @@
             (set! noah "Noah Ma")
             (displayln noah))
           (begin
+            (: get-1 [-> Real])
+            (define get-1 (λ () 1))
+            (get-1))
+          (begin
             (: fact [-> Real Real])
             (define fact
               (λ (n)

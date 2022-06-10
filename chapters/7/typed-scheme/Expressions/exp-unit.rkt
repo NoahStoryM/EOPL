@@ -284,7 +284,7 @@
                         (type-of exp tenv renv T)]
                      [`[-> ,I ,O : #:+ ,T #:- ,F]
                       #:when (and (type? I) (type? O)
-                                  (type? T) (type? F))
+                                  (prop? T) (prop? F))
                       (match I
                         [`(Values ,ts ... ,t* *)
                          #:when (and (symbol? vars)
@@ -336,7 +336,7 @@
                     [('() _) t]
                     [(tvars `[-> ,I ,O : #:+ ,T #:- ,F])
                      #:when (and (type? I) (type? O)
-                                 (type? T) (type? F))
+                                 (prop? T) (prop? F))
                      (: menv (Mutable-HashTable Type (Option Type)))
                      (define menv (make-hash))
                      (for ([tvar (in-list tvars)]) (hash-set! menv tvar #f))
@@ -381,7 +381,7 @@
                 (match T
                   [`[-> ,I ,O : #:+ ,T #:- ,F]
                    #:when (and (type? I) (type? O)
-                               (type? T) (type? F))
+                               (prop? T) (prop? F))
                    (begin0 (check O)
                      (match I
                        [`(Values ,ts ... ,t* *)
