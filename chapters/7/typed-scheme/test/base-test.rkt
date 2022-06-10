@@ -127,5 +127,22 @@
             (: sum [-> [-> Real * Real] Real Real Real])
             (define sum (λ (s r1 r2) (s r1 r2)))
             (sum + 1 2))
+
+          (begin
+            (: add2 [-> Real Real Real])
+            (define add2 (λ (x y) (+ x y)))
+            (add2 1 2))
+          (begin
+            (: add2 [-> Real [-> Real Real]])
+            (define add2 (λ (x) (λ (y) (+ x y))))
+            ((add2 1) 2))
+          (begin
+            (: add2 [-> Real Real Real])
+            (define (add2 x y) (+ x y))
+            (add2 1 2))
+          (begin
+            (: add2 [-> Real [-> Real Real]])
+            (define ((add2 x) y) (+ x y))
+            ((add2 1) 2))
           ))])
   (displayln (format "test ~a: ~a" i (*check-code* code (base-env) eval-ns))))

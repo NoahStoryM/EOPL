@@ -226,175 +226,177 @@
 
 
       (λ (exp tenv renv t0)
-        (: check [-> Type Type])
-        (define check
-          (λ (t1)
-            (if (or (false? t0) (<=: t1 t0))
-                (match t1
-                  [`(Values ,t) t]
-                  [_ t1])
-                (raise-type-of-error t0 t1 exp))))
+        (let ([t0 (and t0 (desugar-type t0))])
+          (: check [-> Type Type])
+          (define check
+            (λ (t1)
+              (if (or (false? t0) (<=: t1 t0))
+                  (match t1
+                    [`(Values ,t) t]
+                    [_ t1])
+                  (raise-type-of-error t0 t1 exp))))
 
-        (match exp
-          [(ann-exp  exp type)  (begin0 (check (apply-renv renv type (λ () type))) (type-of exp tenv renv type))]
-          [(cast-exp exp type)  (begin0 (apply-renv renv type (λ () type)) (type-of exp tenv renv 'Any))]
-          [(inst-exp exp types) (check (apply inst-type (type-of exp tenv renv #f) types))]
+          (match exp
+            [(ann-exp  exp type)  (begin0 (check (apply-renv renv type (λ () type))) (type-of exp tenv renv type))]
+            [(cast-exp exp type)  (begin0 (apply-renv renv type (λ () type)) (type-of exp tenv renv 'Any))]
+            [(inst-exp exp types) (check (apply inst-type (type-of exp tenv renv #f) types))]
 
-          [(assign-exp var exp) (begin0 (check 'Void) (type-of exp tenv renv (apply-tenv tenv var)))]
+            [(assign-exp var exp) (begin0 (check 'Void) (type-of exp tenv renv (apply-tenv tenv var)))]
 
-          [(symbol-exp sym)  (check 'Symbol)]
-          [(real-exp   num)  (check 'Real)]
-          [(bool-exp   #t)   (check 'True)]
-          [(bool-exp   #f)   (check 'False)]
-          [(char-exp   char) (check 'Char)]
-          [(string-exp str)  (check 'String)]
+            [(symbol-exp sym)  (check 'Symbol)]
+            [(real-exp   num)  (check 'Real)]
+            [(bool-exp   #t)   (check 'True)]
+            [(bool-exp   #f)   (check 'False)]
+            [(char-exp   char) (check 'Char)]
+            [(string-exp str)  (check 'String)]
 
-          [(var-exp var)     (check (apply-tenv tenv var))]
+            [(var-exp var)     (check (apply-tenv tenv var))]
 
-          [(begin-exp (cons exp exps))
-           (cond [(null? exps) (type-of exp tenv renv t0)]
-                 [else
-                  (type-of exp tenv renv #f)
-                  (type-of (begin-exp exps) tenv renv t0)])]
+            [(begin-exp (cons exp exps))
+             (cond [(null? exps) (type-of exp tenv renv t0)]
+                   [else
+                    (type-of exp tenv renv #f)
+                    (type-of (begin-exp exps) tenv renv t0)])]
 
-          [(if-exp pred-exp true-exp false-exp)
-           (define tp (type-of pred-exp  tenv renv 'Boolean))
-           (define tt (type-of true-exp  tenv renv t0))
-           (define tf (type-of false-exp tenv renv t0))
-           (case tp
-             [(True)    tt]
-             [(False)   tf]
-             [(Boolean) (check (type-union tt tf))]
-             [else (raise-type-of-error 'Boolean tp pred-exp)])]
+            [(if-exp pred-exp true-exp false-exp)
+             (define tp (type-of pred-exp  tenv renv 'Boolean))
+             (define tt (type-of true-exp  tenv renv t0))
+             (define tf (type-of false-exp tenv renv t0))
+             (case tp
+               [(True)    tt]
+               [(False)   tf]
+               [(Boolean) (check (type-union tt tf))]
+               [else (raise-type-of-error 'Boolean tp pred-exp)])]
 
 
-          #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv renv t0)]
-          [(proc-exp vars body)
-           (if t0
-               (begin0 t0
-                 (match t0
-                   [`(All (,A) ,T)
-                    #:when (and (type? A) (type? T))
-                    (type-of exp tenv renv T)]
-                   #;[`(All (,A ,..) ,T)
-                      #:when (and (type? A)
-                                  (eq? .. '...)
-                                  (type? T))
+            #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv renv t0)]
+            [(proc-exp vars body)
+             (if t0
+                 (begin0 t0
+                   (match t0
+                     [`(All (,A) ,T)
+                      #:when (and (type? A) (type? T))
                       (type-of exp tenv renv T)]
-                   [`[-> ,I ,O : #:+ ,T #:- ,F]
-                    #:when (and (type? I) (type? O)
-                                (type? T) (type? F))
-                    (match I
-                      [`(Values ,ts ... ,t* *)
-                       #:when (and (symbol? vars)
-                                   ((listof? type?) ts)
-                                   (type? t*))
-                       (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) renv O)]
-                      [`(Values ,ts ...)
-                       #:when ((listof? type?) ts)
-                       (type-of body
-                                (if (list? vars)
-                                    (extend-tenv* vars ts tenv)
-                                    (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
-                                renv
-                                O)])]))
-               (desugar-type
-                (cond
-                  [(list? vars)
-                   (: ts (Listof 'Any))
-                   (define ts (make-list (length vars) 'Any))
-                   `[-> (Values ,@ts) ,(type-of body (extend-tenv* vars ts tenv) renv #f)]]
-                  [else `[-> (Values Any *) ,(type-of body (extend-tenv vars '(Listof Any) tenv) renv #f)]])))]
-          [(call-exp rator rands)
-           (: ts0 (Listof Type))
-           (define ts0
-             (if (list? rands)
-                 (for/list : (Listof Type)
-                           ([rand (in-list rands)])
-                   (type-of rand tenv renv #f))
-                 (let loop : (Listof Type)
-                      ([t (type-of rands tenv renv #f)]
-                       [res : (Listof Type) '()])
-                   (match t
-                     ['Null (reverse res)]
-                     [`(Pair ,A ,B)
-                      (loop B (cons A res))]))))
+                     #;[`(All (,A ,..) ,T)
+                        #:when (and (type? A)
+                                    (eq? .. '...)
+                                    (type? T))
+                        (type-of exp tenv renv T)]
+                     [`[-> ,I ,O : #:+ ,T #:- ,F]
+                      #:when (and (type? I) (type? O)
+                                  (type? T) (type? F))
+                      (match I
+                        [`(Values ,ts ... ,t* *)
+                         #:when (and (symbol? vars)
+                                     ((listof? type?) ts)
+                                     (type? t*))
+                         (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) renv O)]
+                        [`(Values ,ts ...)
+                         #:when ((listof? type?) ts)
+                         (type-of body
+                                  (if (list? vars)
+                                      (extend-tenv* vars ts tenv)
+                                      (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
+                                  renv
+                                  O)])]))
+                 (desugar-type
+                  (cond
+                    [(list? vars)
+                     (: ts (Listof 'Any))
+                     (define ts (make-list (length vars) 'Any))
+                     `[-> (Values ,@ts) ,(type-of body (extend-tenv* vars ts tenv) renv #f)]]
+                    [else `[-> (Values Any *) ,(type-of body (extend-tenv vars '(Listof Any) tenv) renv #f)]])))]
+            [(call-exp rator rands)
+             (: ts0 (Listof Type))
+             (define ts0
+               (if (list? rands)
+                   (for/list : (Listof Type)
+                             ([rand (in-list rands)])
+                     (type-of rand tenv renv #f))
+                   (let loop : (Listof Type)
+                        ([t (type-of rands tenv renv #f)]
+                         [res : (Listof Type) '()])
+                     (match t
+                       ['Null (reverse res)]
+                       [`(Pair ,A ,B)
+                        (loop B (cons A res))]))))
 
-           (match rator
-             [(proc-exp vars body)
-              (type-of body
-                       (if (list? vars)
-                           (extend-tenv* vars ts0 tenv)
-                           (extend-tenv  vars (desugar-type `(List ,@ts0)) tenv))
-                       renv
-                       t0)]
-             [_
-              (define t (type-of rator tenv renv #f))
-              (define T
-                (match/values (parse-poly t)
-                  [('() _) t]
-                  [(tvars `[-> ,I ,O : #:+ ,T #:- ,F])
+             (match rator
+               [(proc-exp vars body)
+                (type-of body
+                         (if (list? vars)
+                             (extend-tenv* vars ts0 tenv)
+                             (extend-tenv  vars (desugar-type `(List ,@ts0)) tenv))
+                         renv
+                         t0)]
+               [_
+                (define t (type-of rator tenv renv #f))
+                (define T
+                  (match/values (parse-poly t)
+                    [('() _) t]
+                    [(tvars `[-> ,I ,O : #:+ ,T #:- ,F])
+                     #:when (and (type? I) (type? O)
+                                 (type? T) (type? F))
+                     (: menv (Mutable-HashTable Type (Option Type)))
+                     (define menv (make-hash))
+                     (for ([tvar (in-list tvars)]) (hash-set! menv tvar #f))
+                     (let ([s0 : Type
+                               (match I
+                                 [`(Values ,ts ... ,t* *)
+                                  #:when (and ((listof? type?) ts)
+                                              (type? t*))
+                                  `(Values ,@ts0 *)]
+                                 [`(Values ,ts ...)
+                                  #:when (and ((listof? type?) ts)
+                                              (= (length ts0) (length ts)))
+                                  `(Values ,@ts0)])])
+                       (: match-types! [-> Type Type Void])
+                       (define match-types!
+                         (λ (formal actual)
+                           (let ([formal (desugar-type formal)]
+                                 [actual (desugar-type actual)])
+                             (match* (formal actual)
+                               [((? keyword?) (? keyword?)) (void)]
+                               [((? symbol?) _)
+                                (cond
+                                  [(hash-has-key? menv formal)
+                                   (define t (hash-ref menv formal))
+                                   (or (and t (unless (=: t actual) (raise-type-of-error t actual exp)))
+                                       (hash-set! menv formal actual))]
+                                  [(=: formal actual) (void)]
+                                  [else (raise-type-of-error formal actual exp)])]
+                               [((? list?) (? list?))
+                                #:when (= (length formal)
+                                          (length actual))
+                                (for-each match-types! formal actual)]))))
+
+                       (match-types! I s0)
+                       (and t0 (match-types! O t0))
+                       (apply inst-type t
+                              (assert
+                               (for/list : (Listof Type) ([tvar (in-list tvars)])
+                                 (assert (hash-ref menv tvar)))
+                               pair?)))]))
+
+                (match T
+                  [`[-> ,I ,O : #:+ ,T #:- ,F]
                    #:when (and (type? I) (type? O)
                                (type? T) (type? F))
-                   (: menv (Mutable-HashTable Type (Option Type)))
-                   (define menv (make-hash))
-                   (for ([tvar (in-list tvars)]) (hash-set! menv tvar #f))
-                   (let ([O  : Type (desugar-type O)]
-                         [s0 : Type
-                             (match I
-                               [`(Values ,ts ... ,t* *)
-                                #:when (and ((listof? type?) ts)
-                                            (type? t*))
-                                `(Values ,@ts0 *)]
-                               [`(Values ,ts ...)
-                                #:when (and ((listof? type?) ts)
-                                            (= (length ts0) (length ts)))
-                                `(Values ,@ts0)])])
-                     (: match-types! [-> Type Type Void])
-                     (define match-types!
-                       (λ (formal actual)
-                         (match* (formal actual)
-                           [((? keyword?) (? keyword?)) (void)]
-                           [((? symbol?) _)
-                            (cond
-                              [(hash-has-key? menv formal)
-                               (define t (hash-ref menv formal))
-                               (or (and t (unless (=: t actual) (raise-type-of-error t actual exp)))
-                                   (hash-set! menv formal actual))]
-                              [(=: formal actual) (void)]
-                              [else (raise-type-of-error formal actual exp)])]
-                           [((? list?) (? list?))
-                            #:when (= (length formal)
-                                      (length actual))
-                            (for-each match-types! formal actual)])))
-
-                     (match-types! I s0)
-                     (and t0 (match-types! O t0))
-                     (apply inst-type t
-                            (assert
-                             (for/list : (Listof Type) ([tvar (in-list tvars)])
-                               (assert (hash-ref menv tvar)))
-                             pair?)))]))
-
-              (match T
-                [`[-> ,I ,O : #:+ ,T #:- ,F]
-                 #:when (and (type? I) (type? O)
-                             (type? T) (type? F))
-                 (begin0 (check O)
-                   (match I
-                     [`(Values ,ts ... ,t* *)
-                      #:when (and ((listof? type?) ts)
-                                  (type? t*))
-                      (for ([t0 (in-list ts0)]
-                            [t  (in-list (append ts (make-list (- (length ts0) (length ts)) t*)))])
-                        (unless (<=: t0 t)
-                          (raise-type-of-error t0 t exp)))]
-                     [`(Values ,ts ...)
-                      #:when (and ((listof? type?) ts)
-                                  (= (length ts0) (length ts)))
-                      (for ([t0 (in-list ts0)]
-                            [t  (in-list ts)])
-                        (unless (<=: t0 t)
-                          (raise-type-of-error t0 t exp)))]))])])]))))
+                   (begin0 (check O)
+                     (match I
+                       [`(Values ,ts ... ,t* *)
+                        #:when (and ((listof? type?) ts)
+                                    (type? t*))
+                        (for ([t0 (in-list ts0)]
+                              [t  (in-list (append ts (make-list (- (length ts0) (length ts)) t*)))])
+                          (unless (<=: t0 t)
+                            (raise-type-of-error t0 t exp)))]
+                       [`(Values ,ts ...)
+                        #:when (and ((listof? type?) ts)
+                                    (= (length ts0) (length ts)))
+                        (for ([t0 (in-list ts0)]
+                              [t  (in-list ts)])
+                          (unless (<=: t0 t)
+                            (raise-type-of-error t0 t exp)))]))])])])))))
 
   )

@@ -2,6 +2,8 @@
 
 (require "../base/base.rkt")
 
+(displayln "Start test.\n")
+
 
 (value-of/k
  (call-exp

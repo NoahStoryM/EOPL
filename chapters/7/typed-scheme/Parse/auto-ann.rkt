@@ -33,49 +33,51 @@
 
       [`(begin ,exps ..1)
        #:when ((listof? s-exp?) exps)
-       (let loop ([vars  : (Listof Symbol) '()]
-                  [types : (Listof (Option Type)) '()]
-                  [vals  : (Listof S-Exp)  '()]
-                  [exps  exps])
-         (match exps
-           [`((: ,var0 ,type0)
-              (define ,var0 ,val0)
-              ,exps0 ..1)
-            #:when (and (type?   type0)
-                        (symbol? var0)
-                        (s-exp?  val0)
-                        ((listof? s-exp?) exps0))
-            (loop (cons var0  vars)
-                  (cons type0 types)
-                  (cons (auto-ann val0) vals)
-                  exps0)]
-           [`((define ,var0 ,val0)
-              ,exps0 ..1)
-            #:when (and (symbol? var0)
-                        (s-exp?  val0)
-                        ((listof? s-exp?) exps0))
-            (loop (cons var0  vars)
-                  (cons (guess-type val0) types)
-                  (cons (auto-ann val0) vals)
-                  exps0)]
-           [_ (if (or (null? vars) (null? types) (null? vals))
-                  `(begin ,@(map auto-ann exps))
-                  (auto-ann
-                   `(letrec ,(map (ann (λ (var type val)
-                                         (if (false? type)
-                                             `[,var ,val]
-                                             `[,var : ,type ,val]))
-                                       [-> Symbol (Option Type) S-Exp
-                                           (U (List Symbol S-Exp)
-                                              (List Symbol ': Type S-Exp))]
-                                       #;(case-> [-> Symbol False S-Exp
-                                                     (List Symbol S-Exp)]
-                                                 [-> Symbol Type  S-Exp
-                                                     (List Symbol ': Type S-Exp)]))
-                                  (reverse vars)
-                                  (reverse types)
-                                  (reverse vals))
-                      ,@exps)))]))]
+       `(begin
+          ,@(let desugar : (Listof S-Exp)
+                 ([exps exps])
+              (match exps
+                [`((: ,var ,type)
+                   (define ,var ,val)
+                   ,exps0 ..1)
+                 #:when (and (type?   type)
+                             (symbol? var)
+                             (s-exp?  val)
+                             ((listof? s-exp?) exps0))
+                 `((define ,var (ann ,(auto-ann val) ,type))
+                   ,@(desugar exps0))]
+                [`((define ,var ,val)
+                   ,exps0 ..1)
+                 #:when (and (symbol? var)
+                             (s-exp? val)
+                             ((listof? s-exp?) exps0))
+                 `((define ,var (ann ,(auto-ann val) ,(guess-type val)))
+                   ,@(desugar exps0))]
+
+                [`((: ,var ,type)
+                   (define (,head . ,args) ,bodys ..1)
+                   ,exps0 ..1)
+                 #:when (and (type?   type)
+                             (symbol? var)
+                             ((or/c symbol? (and/c pair? (listof? symbol?))) head)
+                             ((or/c (listof? symbol?) symbol?) args)
+                             ((listof? s-exp?) bodys)
+                             ((listof? s-exp?) exps0))
+                 (desugar
+                  `((: ,var ,type)
+                    (define ,head (λ ,args . ,bodys))
+                    ,@exps0))]
+                [`((define (,head . ,args) ,bodys ..1)
+                   ,exps0 ..1)
+                 #:when (and ((or/c symbol? (and/c pair? (listof? symbol?))) head)
+                             ((or/c (listof? symbol?) symbol?) args)
+                             ((listof? s-exp?) bodys)
+                             ((listof? s-exp?) exps0))
+                 (desugar
+                  `((define ,head (λ ,args . ,bodys))
+                    ,@exps0))]
+
+                [_ (map auto-ann exps)])))]
 
       [`(if ,pred-exp ,true-exp ,false-exp)
        #:when (and (s-exp? pred-exp)
@@ -87,15 +89,12 @@
       [`(cond [,pred-exps ,body-exps ..1]
               ..1)
        #:when (and ((listof? s-exp?) pred-exps)
-                   ((listof? (listof? s-exp?)) body-exps))
+                   ((and/c pair? (listof? (and/c pair? (listof? s-exp?)))) body-exps))
        `(cond ,@(map (ann (λ (pred-exp body-exps)
                             `[,(auto-ann pred-exp)
                               ,@(map auto-ann body-exps)])
                           [-> S-Exp S-List (Pair S-Exp S-List)])
-                     pred-exps
-                     (cast body-exps
-                           (Pair (Pair S-Exp S-List)
-                                 (Listof (Pair S-Exp S-List))))))]
+                     pred-exps body-exps))]
 
       [`(and ,exps ...) #:when ((listof? s-exp?) exps) `(and ,@(map auto-ann exps))]
       [`(or  ,exps ...) #:when ((listof? s-exp?) exps) `(or  ,@(map auto-ann exps))]
@@ -118,53 +117,26 @@
        `(with-mutex ,(auto-ann exp)
           ,@(map auto-ann body-exps))]
 
-      [`(,(? (λ (arg)
-               (case arg
-                 [(let let* letrec letrec*) #t]
-                 [else #f]))
-             let-op)
-         ,binds
-         ,body-exps
-         ..1)
-       #:when (and ((listof? s-exp?) binds)
+      [`(,let-op ,binds ,body-exps ..1)
+       #:when (and (case let-op
+                     [(let let* letrec letrec*) #t]
+                     [else #f])
+                   ((listof? s-exp?) binds)
                    ((listof? s-exp?) body-exps))
-       (let loop ([bind-vars  : (Listof Symbol) '()]
-                  [bind-types : (Listof (Option Type)) '()]
-                  [bind-exps  : (Listof S-Exp)  '()]
-                  [binds binds])
-         (match binds
-           [`([,bind-var : ,bind-type ,bind-exp]
-              ,binds0 ...)
-            #:when (and (type?   bind-type)
-                        (symbol? bind-var)
-                        (s-exp?  bind-exp))
-            (loop (cons bind-var  bind-vars)
-                  (cons bind-type bind-types)
-                  (cons (auto-ann bind-exp)  bind-exps)
-                  binds0)]
-           [`([,bind-var ,bind-exp]
-              ,binds0 ...)
-            #:when (and (symbol? bind-var)
-                        (s-exp?  bind-exp))
-            (loop (cons bind-var  bind-vars)
-                  (cons (guess-type bind-exp) bind-types)
-                  (cons (auto-ann bind-exp)  bind-exps)
-                  binds0)]
-           ['()
-            `(,let-op ,(map (ann (λ (var type exp)
-                                   (if (false? type)
-                                       `[,var ,exp]
-                                       `[,var (ann ,exp ,type)]))
-                                 [-> Symbol (Option Type) S-Exp
-                                     (List Symbol (U S-Exp Ann-S-Exp))]
-                                 #;(case-> [-> Symbol False S-Exp
-                                               (List Symbol S-Exp)]
-                                           [-> Symbol Type S-Exp
-                                               (List Symbol Ann-S-Exp)]))
-                            (reverse bind-vars)
-                            (reverse bind-types)
-                            (reverse bind-exps))
-                      ,@(map auto-ann body-exps))]))]
+       `(,let-op
+         ,(for/list : (Listof (List Symbol S-Exp))
+                    ([bind (in-list binds)])
+            (match bind
+              [`[,bind-var : ,bind-type ,bind-exp]
+               #:when (and (type?   bind-type)
+                           (symbol? bind-var)
+                           (s-exp?  bind-exp))
+               `[,bind-var (ann ,(auto-ann bind-exp) ,bind-type)]]
+              [`[,bind-var ,bind-exp]
+               #:when (and (symbol? bind-var)
+                           (s-exp?  bind-exp))
+               `[,bind-var (ann ,(auto-ann bind-exp) ,(guess-type bind-exp))]]))
+         ,@(map auto-ann body-exps))]
 
       [`(let/cc ,cc-var ,body-exps ..1)
        #:when (and (symbol? cc-var) ((listof? s-exp?) body-exps))

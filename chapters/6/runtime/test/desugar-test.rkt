@@ -29,6 +29,9 @@
             (let ([x (list (amb 2 1 -2 5 8 18) (amb 9 8 2 4 14 20))])
               (assert (> (car x) (cadr x)))
               (displayln x)))
+          (begin
+            (define ((add2 x) y) (+ x y))
+            ((add2 1) 2))
           ))])
   (displayln "----------------------------------")
   (pretty-print code)

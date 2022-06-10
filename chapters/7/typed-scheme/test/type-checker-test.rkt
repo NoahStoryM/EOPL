@@ -72,6 +72,23 @@
                 [y : Real 2])
             (+ x y))
 
+          (begin
+            (: add2 [-> Real Real Real])
+            (define add2 (λ (x y) (+ x y)))
+            (add2 1 2))
+          (begin
+            (: add2 [-> Real [-> Real Real]])
+            (define add2 (λ (x) (λ (y) (+ x y))))
+            ((add2 1) 2))
+          (begin
+            (: add2 [-> Real Real Real])
+            (define (add2 x y) (+ x y))
+            (add2 1 2))
+          (begin
+            (: add2 [-> Real [-> Real Real]])
+            (define ((add2 x) y) (+ x y))
+            ((add2 1) 2))
+
           ;;; Type mismatch cases:
           #;(begin
               (: dio Boolean)

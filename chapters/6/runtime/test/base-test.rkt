@@ -268,6 +268,11 @@
               (base-env) base-eval-ns)
 
 (*check-code* '(begin
+                 (define ((add2 x) y) (+ x y))
+                 ((add2 1) 2))
+              (base-env) base-eval-ns)
+
+(*check-code* '(begin
                  (define odd?
                    (λ (num)
                      (cond [(zero? num) #f]
