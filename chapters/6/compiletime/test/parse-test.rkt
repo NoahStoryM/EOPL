@@ -329,9 +329,16 @@
             (spawn (incr-x 400))
             (spawn (incr-x 500))
             x)
+
+          (begin
+            (when (= 1 1) (exit 0))
+            (displayln "Hello, world!"))
           ))])
   (displayln (format "initial ~a:" i))
   (pretty-print code)
+
+  (displayln (format "module exit ~a:" i))
+  (pretty-print (module/exit code))
 
   (displayln (format "desugar ~a:" i))
   (pretty-print (desugar

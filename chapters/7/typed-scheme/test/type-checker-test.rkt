@@ -68,6 +68,10 @@
             (define sum (λ (s r1 r2) (s r1 r2)))
             (sum + 1 2))
 
+          (let ([x : Real 1]
+                [y : Real 2])
+            (+ x y))
+
           ;;; Type mismatch cases:
           #;(begin
               (: dio Boolean)

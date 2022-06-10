@@ -45,6 +45,12 @@
                  (cond
                    [noah "Dummy" (displayln noah)]
                    [else "Dummy" (displayln "Noah isn't named")]))))
+          (: fact (-> Real Real))
+          (define fact
+            (λ (n)
+              (if (zero? n)
+                  1
+                  (* n (fact (sub1 n))))))
           ))])
   (displayln "-----------------------------------")
   (pretty-print code)

@@ -1,7 +1,7 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
-         "../Parse/parser.rkt"
+         "../Parse/parse.rkt"
          "../Parse/desugar.rkt"
          "../Parse/auto-cps.rkt"
          "../Continuation/cont-sig.rkt"
@@ -22,7 +22,7 @@
          "../Expressions/exp-unit.rkt")
 
 (provide (all-from-out "../types/types.rkt")
-         (all-from-out "../Parse/parser.rkt")
+         (all-from-out "../Parse/parse.rkt")
          (all-from-out "../Parse/desugar.rkt")
          (all-from-out "../Parse/auto-cps.rkt")
          (all-defined-out))
