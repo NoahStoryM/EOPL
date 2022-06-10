@@ -303,22 +303,15 @@
          `(All (A) ,(desugar-type `(All (,@B) ,T)))]
 
 
-        ['(List) 'Null]
-        [`(List ,A0 ,A* ...)
-         #:when (and (type? A0)
-                     ((listof? type?) A*))
-         `(Pair ,(desugar-type A0)
-                ,(desugar-type `(List ,@A*)))]
-        [`(List* ,A0 ,A1)
-         #:when (and (type? A0)
-                     (type? A1))
-         `(Pair ,(desugar-type A0)
-                ,(desugar-type A0))]
-        [`(List* ,A0 ,A* ..1)
+        [`(List* ,A0) #:when (type? A0) (desugar-type A0)]
+        [`(List* ,A0 ,A* ...)
          #:when (and (type? A0)
                      ((listof? type?) A*))
          `(Pair ,(desugar-type A0)
                 ,(desugar-type `(List* ,@A*)))]
+        [`(List ,A* ...)
+         #:when ((listof? type?) A*)
+         (desugar-type `(List* ,@A* Null))]
 
 
         [`[-> (Values ,I ...) (Values ,O ...) : #:+ ,T #:- ,F]
