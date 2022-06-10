@@ -67,9 +67,7 @@
                        Type (List '! Type)
                        (List    Type '@ (Rec Pos (U (List (Option Index)) (Pair (U 'car 'cdr) Pos))))
                        (List '! Type '@ (Rec Pos (U (List (Option Index)) (Pair (U 'car 'cdr) Pos))))
-                       (Pair 'and     (Listof Prop))
-                       (Pair 'or      (Listof Prop))
-                       (Pair 'implies (Listof Prop))))
+                       (Pair (U 'and 'or 'implies) (Listof Prop))))
   (define-predicate prop? Prop)
 
 
