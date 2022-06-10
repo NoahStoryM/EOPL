@@ -16,7 +16,8 @@
                  [-> (pred A) (pred B) (pred (U A B))]
                  [-> (pred A) (pred B) (pred C) (pred (U A B C))]
                  [-> (pred A) (pred B) (pred C) (pred D) (pred (U A B C D))]
-                 [-> (pred A) (pred B) (pred C) (pred D) (pred E) (pred (U A B C D E))]))]
+                 [-> (pred A) (pred B) (pred C) (pred D) (pred E) (pred (U A B C D E))]
+                 [-> [-> Any Boolean] * [-> Any Boolean]]))]
    [and/c
     (All (A B C D E)
          (case-> [-> (pred Nothing)]
@@ -24,11 +25,17 @@
                  [-> (pred A) (pred B) (pred (∩ A B))]
                  [-> (pred A) (pred B) (pred C) (pred (∩ A B C))]
                  [-> (pred A) (pred B) (pred C) (pred D) (pred (∩ A B C D))]
-                 [-> (pred A) (pred B) (pred C) (pred D) (pred E) (pred (∩ A B C D E))]))])
+                 [-> (pred A) (pred B) (pred C) (pred D) (pred E) (pred (∩ A B C D E))]
+                 [-> [-> Any Boolean] * [-> Any Boolean]]))]
+   [not/c
+    (All (A)
+         (case-> [-> [-> Any Boolean : #:+ A #:- (! A)]
+                     [-> Any Boolean : #:+ (! A) #:- A]]
+                 [-> [-> Any Boolean] [-> Any Boolean]]))])
 
   (provide
    undefined
-   or/c and/c
+   or/c and/c not/c
    (rename-out
     #;[trace-lambda   trace-λ]
     [case-lambda    case-λ]
