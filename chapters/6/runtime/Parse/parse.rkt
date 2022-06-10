@@ -18,5 +18,4 @@
      (desugar
       (auto-cps
        (desugar
-        (desugar
-         code)))))))
+        code))))))

@@ -47,14 +47,7 @@
     (: exp Exp)
     (define exp
       (assert (call-with-values
-               (λ ()
-                 (eval
-                  (parser
-                   (desugar
-                    (auto-cps
-                     (desugar
-                      code))))
-                  eval-ns))
+               (λ () (eval (parse code) eval-ns))
                (λ args (car args)))
               exp?))
 
