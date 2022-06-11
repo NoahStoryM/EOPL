@@ -7,6 +7,7 @@
 
   (require typed/racket/unsafe)
 
+  (define-type (Complement A B) (Refine [v : A] (! v B)))
   (unsafe-require/typed
    racket/contract/base
    [or/c
