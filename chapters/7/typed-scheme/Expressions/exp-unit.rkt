@@ -358,13 +358,9 @@
                              (match* (formal actual)
                                [((? keyword?) (? keyword?)) (void)]
                                [((? symbol?) _)
-                                (cond
-                                  [(hash-has-key? menv formal)
-                                   (define t (hash-ref menv formal))
-                                   (or (and t (unless (=: t actual) (raise-type-of-error t actual exp)))
-                                       (hash-set! menv formal actual))]
-                                  [(=: formal actual) (void)]
-                                  [else (raise-type-of-error formal actual exp)])]
+                                (when (and (hash-has-key? menv formal)
+                                           (not (hash-ref menv formal)))
+                                  (hash-set! menv formal actual))]
                                [((? list?) (? list?))
                                 #:when (= (length formal)
                                           (length actual))
