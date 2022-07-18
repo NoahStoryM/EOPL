@@ -144,5 +144,10 @@
             (: add2 [-> Real [-> Real Real]])
             (define ((add2 x) y) (+ x y))
             ((add2 1) 2))
+
+          (begin
+            (: b0 (Box Symbol))
+            (define b0 (box 'hello))
+            (cons (unbox b0) (begin (set-box! b0 'world) b0)))
           ))])
   (displayln (format "test ~a: ~a" i (*check-code* code (base-env) eval-ns))))

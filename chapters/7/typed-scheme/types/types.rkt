@@ -186,6 +186,8 @@
                            ((listof? type?) Bs)
                            (= (length As) (length Bs)))
                (andmap =: As Bs)]
+              [(`(Box ,A1 ,B1) `(Box ,A2 ,B2))
+               (and (=: A1 A2) (=: B1 B2))]
               [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
                (and (=: A1 A2) (=: B1 B2))]
               [(`(Listof ,A1) `(Listof ,A2))
@@ -235,6 +237,10 @@
                      ((listof? type?) Bs)
                      (= (length As) (length Bs)))
          (andmap <=: As Bs)]
+        [(`(Box ,A1 ,B1) `(Box ,A2 ,B2))
+         (and (not (=: t1 t2))
+              (<=: A2 A1)
+              (<=: B1 B2))]
         [(`(Pair ,A1 ,B1) `(Pair ,A2 ,B2))
          (and (not (=: t1 t2))
               (<=: A1 A2)
@@ -308,6 +314,8 @@
                      (type? T))
          `(All (A) ,(desugar-type `(All (,@B) ,T)))]
 
+
+        [`(Box ,A0) #:when (type? A0) (desugar-type `(Box ,A0 ,A0))]
 
         [`(List* ,A0) #:when (type? A0) (desugar-type A0)]
         [`(List* ,A0 ,A* ...)

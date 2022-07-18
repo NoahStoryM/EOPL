@@ -148,6 +148,16 @@
            (ref val-1 val-2)]
           [_ (error name "Bad args: ~s" vals)]))))
 
+  (: binary-set! (All (A B) [-> Symbol (pred A) (pred B) [-> A B Void] [-> DenVal * ExpVal]]))
+  (define binary-set!
+    (λ (name data? arg? set-func!)
+      (λ vals
+        (match vals
+          [`(,val-1 ,val-2)
+           #:when (and (data? val-1) (arg? val-2))
+           (set-func! val-1 val-2)]
+          [_ (error name "Bad args: ~s" vals)]))))
+
   (: unary-arithmetic-pred [-> Symbol [-> Real Boolean] [-> DenVal * ExpVal]])
   (define unary-arithmetic-pred
     (λ (name pred)
@@ -338,6 +348,16 @@
   (add-denval! 'undefined 'Undefined undefined)
   (add-primitive-proc! 'undefined? '[-> Any Boolean : Undefined] (unary-pred 'void? void?))
 
+
+  ;; Box
+  (add-primitive-proc! 'box '(All (A B) [-> B (Box A B)])
+                       (λ [vals : DenVal *] : ExpVal
+                         (match vals
+                           [`(,val) (box-val (box val))]
+                           [_ (error 'cons "Bad args: ~s" vals)])))
+  (add-primitive-proc! 'unbox    '(All (B) [-> (Box Nothing B) B])  (unary-destruct 'unbox denbox? (inst unbox DenVal)))
+  (add-primitive-proc! 'set-box! '(All (A) [-> (Box A Any) A Void]) (binary-set! 'set-box! denbox? denval? (inst set-box! DenVal)))
+  (add-primitive-proc! 'box? '[-> Any Boolean : (Box Nothing Any)]  (unary-pred 'box? box?))
 
   ;; Pair
   (add-primitive-proc! 'cons '(All (A B) [-> A B (Pair A B)])

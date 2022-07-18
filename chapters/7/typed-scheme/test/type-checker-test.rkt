@@ -93,6 +93,11 @@
             (define ((add2 x) y) (+ x y))
             ((add2 1) 2))
 
+          (begin
+            (: b0 (Box Symbol))
+            (define b0 (box 'hello))
+            (cons (unbox b0) (begin (set-box! b0 'world) b0)))
+
           ;;; Type mismatch cases:
           #;(begin
               (: dio Boolean)
@@ -114,6 +119,10 @@
           #;((inst cons Real Symbol) 1 "2")
           #;((inst car Real Symbol) ((inst cons Real Symbol) 1 "2"))
           #;((inst cdr Real Symbol) ((inst cons Real Symbol) 1 "2"))
+          #;(begin
+              (: b0 (Box Nothing Symbol))
+              (define b0 (box 'hello))
+              (cons (unbox b0) (begin (set-box! b0 'world) b0)))
           ))])
   (displayln "----------------------------------------------")
   (pretty-print code)
