@@ -297,6 +297,7 @@
   (: desugar-type [-> Type Type])
   (define desugar-type
     (λ (type)
+      ;; TODO Types
       (match type
         [`(Values ,T) #:when (type? T) (desugar-type T)]
 
