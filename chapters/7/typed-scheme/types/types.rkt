@@ -65,11 +65,9 @@
   (define-type Ann-S-Exp (U Literal (List 'ann S-Exp Type)))
   (define-predicate ann-s-exp? Ann-S-Exp)
 
-  (define-type Type (U Keyword Symbol Literal Types))
+  (define-type Type (U Keyword Symbol Literal (Listof Type)))
   (define-predicate type? Type)
 
-  (define-type Types (Listof Type))
-  (define-predicate types? Types)
 
   (define-type Prop (U 'Top 'Bot
                        Type (List '! Type)
@@ -167,7 +165,7 @@
                   [('Real 'Natural) 'Real]
                   [(_ _) 'Any])))]
       [(t1 t2 . ts)
-       (and t1 t2 (types? ts)
+       (and t1 t2 ((listof? type?) ts)
             (for/fold ([res : Type (type-union t1 t2)])
                       ([t (in-list ts)])
               (type-union res t)))]))
