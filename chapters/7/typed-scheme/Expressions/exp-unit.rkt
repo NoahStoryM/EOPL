@@ -197,13 +197,13 @@
       (define parse-poly
         (λ (ptype)
           (let loop : (Values (Listof Type) Type)
-               ([tvars : (Listof Type) '()]
+               ([tvs : (Listof Type) '()]
                 [R ptype])
             (match R
               [`(All (,A) ,T)
                #:when (and (type? A) (type? T))
-               (loop (cons A tvars) T)]
-              [_ (values (reverse tvars) R)]))))
+               (loop (cons A tvs) T)]
+              [_ (values (reverse tvs) R)]))))
 
       (: inst-type [-> Type Type Type * Type])
       (define inst-type
@@ -334,12 +334,12 @@
                 (define T
                   (match/values (parse-poly t)
                     [('() _) t]
-                    [(tvars `[-> ,I ,O : #:+ ,T #:- ,F])
+                    [(tvs `[-> ,I ,O : #:+ ,T #:- ,F])
                      #:when (and (type? I) (type? O)
                                  (prop? T) (prop? F))
                      (: menv (Mutable-HashTable Type (Option Type)))
                      (define menv (make-hash))
-                     (for ([tvar (in-list tvars)]) (hash-set! menv tvar #f))
+                     (for ([tv (in-list tvs)]) (hash-set! menv tv #f))
                      (let ([s0 : Type
                                (match I
                                  [`(Values ,ts ... ,t* *)
@@ -370,8 +370,8 @@
                        (and t0 (match-types! O t0))
                        (apply inst-type t
                               (assert
-                               (for/list : (Listof Type) ([tvar (in-list tvars)])
-                                 (assert (hash-ref menv tvar)))
+                               (for/list : (Listof Type) ([tv (in-list tvs)])
+                                 (assert (hash-ref menv tv)))
                                pair?)))]))
 
                 (match T
