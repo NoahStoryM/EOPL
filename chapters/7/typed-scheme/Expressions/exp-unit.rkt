@@ -292,7 +292,6 @@
                                      (type? t*))
                          (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) renv O)]
                         [`(Values ,ts ...)
-                         #:when ((listof? type?) ts)
                          (type-of body
                                   (if (list? vars)
                                       (extend-tenv* vars ts tenv)
@@ -347,8 +346,7 @@
                                               (type? t*))
                                   `(Values ,@ts0 *)]
                                  [`(Values ,ts ...)
-                                  #:when (and ((listof? type?) ts)
-                                              (= (length ts0) (length ts)))
+                                  #:when (= (length ts0) (length ts))
                                   `(Values ,@ts0)])])
                        (: match-types! [-> Type Type Void])
                        (define match-types!
@@ -388,8 +386,7 @@
                           (unless (<=: t0 t)
                             (raise-type-of-error t0 t exp)))]
                        [`(Values ,ts ...)
-                        #:when (and ((listof? type?) ts)
-                                    (= (length ts0) (length ts)))
+                        #:when (= (length ts0) (length ts))
                         (for ([t0 (in-list ts0)]
                               [t  (in-list ts)])
                           (unless (<=: t0 t)

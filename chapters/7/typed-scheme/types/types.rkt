@@ -185,9 +185,7 @@
             (match* (t1 t2)
               [(`(Values ,As ...)
                 `(Values ,Bs ...))
-               #:when (and ((listof? type?) As)
-                           ((listof? type?) Bs)
-                           (= (length As) (length Bs)))
+               #:when (= (length As) (length Bs))
                (andmap =: As Bs)]
               [(`(Box ,A1 ,B1) `(Box ,A2 ,B2))
                (and (=: A1 A2) (=: B1 B2))]
@@ -227,8 +225,7 @@
               (andmap (curry <=: A*) (list-tail Bs (length As))))]
         [(`(Values ,As ...)
           `(Values ,Bs ... ,B* *))
-         #:when (and ((listof? type?) As)
-                     (not (eq? '* (car (last-pair As))))
+         #:when (and (not (eq? '* (car (last-pair As))))
                      ((listof? type?) Bs)
                      (type? B*)
                      (>= (length As) (length Bs)))
@@ -236,9 +233,7 @@
               (andmap (curry >=: B*) (list-tail As (length Bs))))]
         [(`(Values ,As ...)
           `(Values ,Bs ...))
-         #:when (and ((listof? type?) As)
-                     ((listof? type?) Bs)
-                     (= (length As) (length Bs)))
+         #:when (= (length As) (length Bs))
          (andmap <=: As Bs)]
         [(`(Box ,A1 ,B1) `(Box ,A2 ,B2))
          (and (not (=: t1 t2))
@@ -323,19 +318,14 @@
 
         [`(List* ,A0) #:when (type? A0) (desugar-type A0)]
         [`(List* ,A0 ,A* ...)
-         #:when (and (type? A0)
-                     ((listof? type?) A*))
          `(Pair ,(desugar-type A0)
                 ,(desugar-type `(List* ,@A*)))]
         [`(List ,A* ...)
-         #:when ((listof? type?) A*)
          (desugar-type `(List* ,@A* Null))]
 
 
         [`[-> (Values ,I ...) (Values ,O ...) : #:+ ,T #:- ,F]
-         #:when (and ((listof? type?) I)
-                     ((listof? type?) O)
-                     (prop? T)
+         #:when (and (prop? T)
                      (prop? F))
          `[-> (Values ,@(map desugar-type I))
               (Values ,@(map desugar-type O))
@@ -344,7 +334,6 @@
               #:- ,(desugar-prop F)]]
         [`[-> ,I ... (Values ,O ...) : #:+ ,T #:- ,F]
          #:when (and ((listof? type?) I)
-                     ((listof? type?) O)
                      (prop? T)
                      (prop? F))
          (desugar-type `[-> (Values ,@I) (Values ,@O) : #:+ ,T #:- ,F])]
