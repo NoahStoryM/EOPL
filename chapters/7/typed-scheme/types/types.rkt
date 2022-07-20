@@ -68,6 +68,9 @@
   (define-type Type (U Keyword Symbol Literal (Listof Type)))
   (define-predicate type? Type)
 
+  (define-type Tvar Symbol)
+  (define-predicate tvar? Tvar)
+
   (define-type Subst (Immutable-HashTable Symbol Type))
   (define-predicate subst? Subst)
 

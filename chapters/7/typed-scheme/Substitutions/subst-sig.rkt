@@ -8,8 +8,8 @@
 (define-signature subst^
   (
    [empty-subst  : [-> Subst]]
-   [extend-subst : [-> Subst Symbol Type Subst]]
+   [extend-subst : [-> Subst Tvar Type Subst]]
 
-   [apply-one-subst     : [-> Type Symbol Type Type]]
+   [apply-one-subst     : [-> Type Tvar Type Type]]
    [apply-subst-to-type : [-> Type Subst Type]]
    ))

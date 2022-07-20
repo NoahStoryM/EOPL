@@ -194,15 +194,15 @@
   (: type-of [-> Exp TEnv REnv (Option Type) Type])
   (define type-of
     (let ()
-      (: parse-poly [-> Type (Values (Listof Type) Type)])
+      (: parse-poly [-> Type (Values (Listof Tvar) Type)])
       (define parse-poly
         (λ (ptype)
-          (let loop : (Values (Listof Type) Type)
-               ([tvs : (Listof Type) '()]
+          (let loop : (Values (Listof Tvar) Type)
+               ([tvs : (Listof Tvar) '()]
                 [R ptype])
             (match R
               [`(All (,A) ,T)
-               #:when (and (type? A) (type? T))
+               #:when (and (tvar? A) (type? T))
                (loop (cons A tvs) T)]
               [_ (values (reverse tvs) R)]))))
 
@@ -212,9 +212,8 @@
           (define-values (tv tb) (parse-poly t0))
           (assert (> (length tv) (length ts)))
 
-          (: renv (Immutable-HashTable Type Type))
           (define renv
-            (for/hash : (Immutable-HashTable Type Type)
+            (for/hash : (Immutable-HashTable Tvar Type)
                       ([k (in-list tv)]
                        [v (in-list (cons t ts))])
               (values k v)))
@@ -338,7 +337,7 @@
                     [(tvs `[-> ,I ,O : #:+ ,T #:- ,F])
                      #:when (and (type? I) (type? O)
                                  (prop? T) (prop? F))
-                     (: menv (Mutable-HashTable Type (Option Type)))
+                     (: menv (Mutable-HashTable Tvar (Option Type)))
                      (define menv (make-hash))
                      (for ([tv (in-list tvs)]) (hash-set! menv tv #f))
                      (let ([s0 : Type
