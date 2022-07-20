@@ -56,8 +56,8 @@
   (: unifier [-> Type Type Subst Exp Subst])
   (define unifier
     (λ (t1 t2 s exp)
-      (let ([t1 (apply-subst-to-type t1 s)]
-            [t2 (apply-subst-to-type t2 s)])
+      (let ([t1 (if (tvar? t1) (apply-subst-to-type t1 s) t1)]
+            [t2 (if (tvar? t2) (apply-subst-to-type t2 s) t2)])
         (match* (t1 t2)
           [(_ _) #:when (equal? t1 t2) s]
           [((? tvar?) _) (safe-extend-subst s t1 t2 exp)]
