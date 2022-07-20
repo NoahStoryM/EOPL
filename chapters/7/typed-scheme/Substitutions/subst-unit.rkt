@@ -6,6 +6,16 @@
 (provide subst@)
 
 
+(: raise-no-occurrence-error [-> Type Type Exp Nothing])
+(define raise-no-occurrence-error
+  (λ (t1 t2 in)
+    (raise-arguments-error
+     'no-occurrence? "no-occurrence invariant"
+     "t1" t1
+     "t2" t2
+     "in" in)))
+
+
 (define-unit subst@
   (import)
   (export subst^)
@@ -21,6 +31,47 @@
          (values lhs (apply-one-subst rhs tv t)))
        tv t)))
 
+  (: safe-extend-subst [-> Subst Tvar Type Exp Subst])
+  (define safe-extend-subst
+    (λ (s t1 t2 exp)
+      (if (no-occurrence? t1 t2)
+          (extend-subst s t1 t2)
+          (raise-no-occurrence-error t1 t2 exp))))
+
+
+  (: no-occurrence? [-> Tvar Type Boolean])
+  (define no-occurrence?
+    (λ (tv t)
+      (: no-occur-tv? [-> Type Boolean])
+      (define no-occur-tv? (λ (t) (no-occurrence? tv t)))
+
+      (match t
+        [(or 'Boolean 'Real 'Char 'String 'Bytes 'Keyword 'Tvar) #t]
+        [`(Values ,ts ...)
+         (andmap no-occur-tv? ts)]
+        [`[-> ,I ,O : #:+ ,T #:- ,F]
+         (and (no-occur-tv? I) (no-occur-tv? O))]
+        [(? tvar?) (not (eq? tv t))])))
+
+  (: unifier [-> Type Type Subst Exp Subst])
+  (define unifier
+    (λ (t1 t2 s exp)
+      (let ([t1 (apply-subst-to-type t1 s)]
+            [t2 (apply-subst-to-type t2 s)])
+        (match* (t1 t2)
+          [(_ _) #:when (equal? t1 t2) s]
+          [((? tvar?) _) (safe-extend-subst s t1 t2 exp)]
+          [(_ (? tvar?)) (safe-extend-subst s t2 t1 exp)]
+          [(`(Values ,ts1 ...)
+            `(Values ,ts2 ...))
+           (for/fold ([s : Subst s])
+                     ([t1 (in-list ts1)]
+                      [t2 (in-list ts2)])
+             (unifier t1 t2 s exp))]
+          [(`[-> ,I1 ,O1 : #:+ ,T1 #:- ,F1]
+            `[-> ,I2 ,O2 : #:+ ,T2 #:- ,F2])
+           (unifier O1 O2 (unifier I1 I2 s exp) exp)]))))
+
 
   (: apply-one-subst [-> Type Tvar Type Type])
   (define apply-one-subst
@@ -31,7 +82,6 @@
       (match t0
         [(or 'Boolean 'Real 'Char 'String 'Bytes 'Keyword 'Tvar) t0]
         [`(Values ,ts ...)
-         #:when ((listof? type?) ts)
          `(Values ,@(map apply-t ts))]
         [`[-> ,I ,O : #:+ ,T #:- ,F]
          `[-> ,(apply-t I) ,(apply-t O) : #:+ ,T #:- ,F]]
@@ -46,7 +96,6 @@
       (match t
         [(or 'Boolean 'Real 'Char 'String 'Bytes 'Keyword 'Tvar) t]
         [`(Values ,ts ...)
-         #:when ((listof? type?) ts)
          `(Values ,@(map apply-t ts))]
         [`[-> ,I ,O : #:+ ,T #:- ,F]
          `[-> ,(apply-t I) ,(apply-t O) : #:+ ,T #:- ,F]]

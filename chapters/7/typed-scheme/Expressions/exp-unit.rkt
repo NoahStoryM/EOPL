@@ -13,7 +13,7 @@
 (provide exp@)
 
 
-(: raise-type-of-error [-> Any Any Any Nothing])
+(: raise-type-of-error [-> Type Type Exp Nothing])
 (define raise-type-of-error
   (λ (expected given in)
     (raise-arguments-error
