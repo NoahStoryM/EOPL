@@ -68,6 +68,8 @@
   (define-type Type (U Keyword Symbol Literal (Listof Type)))
   (define-predicate type? Type)
 
+  (define-type Subst (Immutable-HashTable Symbol Type))
+  (define-predicate subst? Subst)
 
   (define-type Prop (U 'Top 'Bot
                        Type (List '! Type)

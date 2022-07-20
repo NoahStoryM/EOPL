@@ -1,6 +1,7 @@
 #lang typed/racket
 
 (require "../types/types.rkt"
+         "../Substitutions/subst-sig.rkt"
          "../Continuation/cont-sig.rkt"
          "../ExpValues/values-sig.rkt"
          "../Environment/env-sig.rkt"
@@ -23,7 +24,7 @@
 
 
 (define-unit exp@
-  (import cont^ values^ env^ tenv^ renv^ proc^)
+  (import subst^ cont^ values^ env^ tenv^ renv^ proc^)
   (export exp^)
 
 

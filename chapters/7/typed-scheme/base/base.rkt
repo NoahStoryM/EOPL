@@ -2,6 +2,8 @@
 
 (require "../types/types.rkt"
          "../Parse/parse.rkt"
+         "../Substitutions/subst-sig.rkt"
+         "../Substitutions/subst-unit.rkt"
          "../Continuation/cont-sig.rkt"
          "../Continuation/cont-unit.rkt"
          "../ExpValues/values-sig.rkt"
@@ -29,12 +31,12 @@
 
 (define-compound-unit/infer base@
   (import)
-  (export cont^ values^ env^ tenv^ renv^ proc^ exp^)
-  (link   cont@ values@ env@ tenv@ renv@ proc@ exp@))
+  (export subst^ cont^ values^ env^ tenv^ renv^ proc^ exp^)
+  (link   subst@ cont@ values@ env@ tenv@ renv@ proc@ exp@))
 
 (define-values/invoke-unit base@
   (import)
-  (export cont^ values^ env^ tenv^ renv^ proc^ exp^))
+  (export subst^ cont^ values^ env^ tenv^ renv^ proc^ exp^))
 
 
 (define-namespace-anchor ns-anchor)
