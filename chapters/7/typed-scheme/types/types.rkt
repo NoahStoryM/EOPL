@@ -406,7 +406,7 @@
 
   (define-struct tenv
     ([type  : (U 'empty-tenv 'extend-tenv)]
-     [binds : (Immutable-HashTable Symbol Type)])
+     [binds : (Immutable-HashTable Tvar Type)])
     #:type-name TEnv)
 
   (define-struct renv

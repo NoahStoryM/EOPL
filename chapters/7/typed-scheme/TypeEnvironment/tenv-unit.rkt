@@ -6,7 +6,7 @@
 (provide tenv@)
 
 
-(: report-no-type-binding-found [-> Symbol Nothing])
+(: report-no-type-binding-found [-> Tvar Nothing])
 (define report-no-type-binding-found
   (λ (search-var)
     (error 'apply-env "No type binding for ~s" search-var)))
@@ -33,12 +33,12 @@
   (define empty-tenv? (λ (tenv) (eqv? (tenv-type tenv) 'empty-tenv)))
 
 
-  (: extend-tenv [-> Symbol Type TEnv TEnv])
+  (: extend-tenv [-> Tvar Type TEnv TEnv])
   (define extend-tenv
     (λ (var val saved-tenv)
       (make-tenv 'extend-tenv (hash-set (tenv-binds saved-tenv) var val))))
 
-  (: extend-tenv* [-> (Listof Symbol) (Listof Type) TEnv TEnv])
+  (: extend-tenv* [-> (Listof Tvar) (Listof Type) TEnv TEnv])
   (define extend-tenv*
     (λ (vars vals saved-tenv)
       (unless (= (length vars) (length vals))
@@ -48,17 +48,17 @@
                                "actual arguments" vals))
 
       (make-tenv 'extend-tenv
-                 (for/fold ([res : (Immutable-HashTable Symbol Type)
+                 (for/fold ([res : (Immutable-HashTable Tvar Type)
                                  (tenv-binds saved-tenv)])
                            ([var (in-list vars)]
                             [val (in-list vals)])
                    (hash-set res var val)))))
 
-  (: extend-tenv+ [-> (Listof (Pair Symbol Type)) TEnv TEnv])
+  (: extend-tenv+ [-> (Listof (Pair Tvar Type)) TEnv TEnv])
   (define extend-tenv+
     (λ (binds saved-tenv)
       (make-tenv 'extend-tenv
-                 (for/fold ([res : (Immutable-HashTable Symbol Type)
+                 (for/fold ([res : (Immutable-HashTable Tvar Type)
                                  (tenv-binds saved-tenv)])
                            ([bind (in-list binds)])
                    (hash-set res (car bind) (cdr bind))))))
@@ -72,14 +72,14 @@
   (define-predicate tenv? TEnv)
 
 
-  (: apply-tenv [->* (TEnv Symbol) ([-> Type]) Type])
+  (: apply-tenv [->* (TEnv Tvar) ([-> Type]) Type])
   (define apply-tenv
     (case-lambda
       [(tenv var) (hash-ref (tenv-binds tenv) var)]
       [(tenv var fail-res) (hash-ref (tenv-binds tenv) var fail-res)]))
 
 
-  (: has-tbinding? [-> TEnv Symbol Boolean])
+  (: has-tbinding? [-> TEnv Tvar Boolean])
   (define has-tbinding?
     (λ (tenv var)
       (hash-has-key? (tenv-binds tenv) var)))

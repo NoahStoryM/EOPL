@@ -12,13 +12,13 @@
    [empty-tenv?  : [-> TEnv Boolean]]
 
 
-   [extend-tenv  : [-> Symbol Type TEnv TEnv]]
-   [extend-tenv* : [-> (Listof Symbol) (Listof Type) TEnv TEnv]]
-   [extend-tenv+ : [-> (Listof (Pair Symbol Type)) TEnv TEnv]]
+   [extend-tenv  : [-> Tvar Type TEnv TEnv]]
+   [extend-tenv* : [-> (Listof Tvar) (Listof Type) TEnv TEnv]]
+   [extend-tenv+ : [-> (Listof (Pair Tvar Type)) TEnv TEnv]]
 
    [extend-tenv? : [-> TEnv Boolean]]
 
    [tenv?          : [-> Any Boolean : TEnv]]
-   [apply-tenv     : [->* (TEnv Symbol) ([-> Type]) Type]]
-   [has-tbinding?  : [-> TEnv Symbol Boolean]]
+   [apply-tenv     : [->* (TEnv Tvar) ([-> Type]) Type]]
+   [has-tbinding?  : [-> TEnv Tvar Boolean]]
    ))
