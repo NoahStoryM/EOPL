@@ -6,7 +6,6 @@
          "../ExpValues/values-sig.rkt"
          "../Environment/env-sig.rkt"
          "../TypeEnvironment/tenv-sig.rkt"
-         "../RelationEnvironment/renv-sig.rkt"
          "../Procedure/proc-sig.rkt"
          "exp-sig.rkt")
 
@@ -24,7 +23,7 @@
 
 
 (define-unit exp@
-  (import subst^ cont^ values^ env^ tenv^ renv^ proc^)
+  (import subst^ cont^ values^ env^ tenv^ proc^)
   (export exp^)
 
 
@@ -191,7 +190,7 @@
                                     [-> Cont [-> ExpVal FinalAnswer]]))
                         cont))))
 
-  (: type-of [-> Exp TEnv REnv (Option Type) Type])
+  (: type-of [-> Exp TEnv (Option Type) Type])
   (define type-of
     (let ()
       (: parse-poly [-> Type (Values (Listof Tvar) Type)])
@@ -225,7 +224,7 @@
               [_ T]))))
 
 
-      (λ (exp tenv renv t0)
+      (λ (exp tenv t0)
         (let ([t0 (and t0 (desugar-type t0))])
           (: check [-> Type Type])
           (define check
@@ -237,11 +236,11 @@
                   (raise-type-of-error t0 t1 exp))))
 
           (match exp
-            [(ann-exp  exp type)  (begin0 (check (apply-renv renv type (λ () type))) (type-of exp tenv renv type))]
-            [(cast-exp exp type)  (begin0 (apply-renv renv type (λ () type)) (type-of exp tenv renv 'Any))]
-            [(inst-exp exp types) (check (apply inst-type (type-of exp tenv renv #f) types))]
+            [(ann-exp  exp type)  (begin0 (check type) (type-of exp tenv type))]
+            [(cast-exp exp type)  (begin0 type (type-of exp tenv 'Any))]
+            [(inst-exp exp types) (check (apply inst-type (type-of exp tenv #f) types))]
 
-            [(assign-exp var exp) (begin0 (check 'Void) (type-of exp tenv renv (apply-tenv tenv var)))]
+            [(assign-exp var exp) (begin0 (check 'Void) (type-of exp tenv (apply-tenv tenv var)))]
 
             [(symbol-exp sym)  (check 'Symbol)]
             [(real-exp   num)  (check 'Real)]
@@ -253,15 +252,15 @@
             [(var-exp var)     (check (apply-tenv tenv var))]
 
             [(begin-exp (cons exp exps))
-             (cond [(null? exps) (type-of exp tenv renv t0)]
+             (cond [(null? exps) (type-of exp tenv t0)]
                    [else
-                    (type-of exp tenv renv #f)
-                    (type-of (begin-exp exps) tenv renv t0)])]
+                    (type-of exp tenv #f)
+                    (type-of (begin-exp exps) tenv t0)])]
 
             [(if-exp pred-exp true-exp false-exp)
-             (define tp (type-of pred-exp  tenv renv 'Boolean))
-             (define tt (type-of true-exp  tenv renv t0))
-             (define tf (type-of false-exp tenv renv t0))
+             (define tp (type-of pred-exp  tenv 'Boolean))
+             (define tt (type-of true-exp  tenv t0))
+             (define tf (type-of false-exp tenv t0))
              (case tp
                [(True)    tt]
                [(False)   tf]
@@ -269,19 +268,19 @@
                [else (raise-type-of-error 'Boolean tp pred-exp)])]
 
 
-            #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv renv t0)]
+            #;[(trace-proc-exp vars body) (type-of (proc-exp vars body) tenv t0)]
             [(proc-exp vars body)
              (if t0
                  (begin0 t0
                    (match t0
                      [`(All (,A) ,T)
                       #:when (and (type? A) (type? T))
-                      (type-of exp tenv renv T)]
+                      (type-of exp tenv T)]
                      #;[`(All (,A ,..) ,T)
                         #:when (and (type? A)
                                     (eq? .. '...)
                                     (type? T))
-                        (type-of exp tenv renv T)]
+                        (type-of exp tenv T)]
                      [`[-> ,I ,O : #:+ ,T #:- ,F]
                       #:when (and (type? I) (type? O)
                                   (prop? T) (prop? F))
@@ -290,30 +289,29 @@
                          #:when (and (symbol? vars)
                                      ((listof? type?) ts)
                                      (type? t*))
-                         (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) renv O)]
+                         (type-of body (extend-tenv vars (desugar-type `(List* ,@ts (Listof ,t*))) tenv) O)]
                         [`(Values ,ts ...)
                          (type-of body
                                   (if (list? vars)
                                       (extend-tenv* vars ts tenv)
                                       (extend-tenv  vars (desugar-type `(List ,@ts)) tenv))
-                                  renv
                                   O)])]))
                  (desugar-type
                   (cond
                     [(list? vars)
                      (: ts (Listof 'Any))
                      (define ts (make-list (length vars) 'Any))
-                     `[-> (Values ,@ts) ,(type-of body (extend-tenv* vars ts tenv) renv #f)]]
-                    [else `[-> (Values Any *) ,(type-of body (extend-tenv vars '(Listof Any) tenv) renv #f)]])))]
+                     `[-> (Values ,@ts) ,(type-of body (extend-tenv* vars ts tenv) #f)]]
+                    [else `[-> (Values Any *) ,(type-of body (extend-tenv vars '(Listof Any) tenv) #f)]])))]
             [(call-exp rator rands)
              (: ts0 (Listof Type))
              (define ts0
                (if (list? rands)
                    (for/list : (Listof Type)
                              ([rand (in-list rands)])
-                     (type-of rand tenv renv #f))
+                     (type-of rand tenv #f))
                    (let loop : (Listof Type)
-                        ([t (type-of rands tenv renv #f)]
+                        ([t (type-of rands tenv #f)]
                          [res : (Listof Type) '()])
                      (match t
                        ['Null (reverse res)]
@@ -326,10 +324,9 @@
                          (if (list? vars)
                              (extend-tenv* vars ts0 tenv)
                              (extend-tenv  vars (desugar-type `(List ,@ts0)) tenv))
-                         renv
                          t0)]
                [_
-                (define t (type-of rator tenv renv #f))
+                (define t (type-of rator tenv #f))
                 (define T
                   (match/values (parse-poly t)
                     [('() _) t]

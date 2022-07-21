@@ -12,8 +12,6 @@
          "../Procedure/proc-unit.rkt"
          "../TypeEnvironment/tenv-sig.rkt"
          "../TypeEnvironment/tenv-unit.rkt"
-         "../RelationEnvironment/renv-sig.rkt"
-         "../RelationEnvironment/renv-unit.rkt"
          "../Environment/env-sig.rkt"
          "../Environment/env-unit.rkt"
          "../Expressions/exp-sig.rkt"
@@ -31,12 +29,12 @@
 
 (define-compound-unit/infer base@
   (import)
-  (export subst^ cont^ values^ env^ tenv^ renv^ proc^ exp^)
-  (link   subst@ cont@ values@ env@ tenv@ renv@ proc@ exp@))
+  (export subst^ cont^ values^ env^ tenv^ proc^ exp^)
+  (link   subst@ cont@ values@ env@ tenv@ proc@ exp@))
 
 (define-values/invoke-unit base@
   (import)
-  (export subst^ cont^ values^ env^ tenv^ renv^ proc^ exp^))
+  (export subst^ cont^ values^ env^ tenv^ proc^ exp^))
 
 
 (define-namespace-anchor ns-anchor)
@@ -61,7 +59,7 @@
 
     #;(pretty-print code)
     #;(pretty-print exp)
-    (type-of exp (base-tenv) (base-renv) #f)
+    (type-of exp (base-tenv) #f)
     (value-of/k exp env cont)))
 
 (let ()
@@ -83,7 +81,7 @@
 
       #;(pretty-print code)
       #;(pretty-print exp)
-      (type-of exp (base-tenv) (base-renv) #f)
+      (type-of exp (base-tenv) #f)
       (value-of/k exp env (id-cont))))
 
   (: ~eval~ [-> S-Exp Env ExpVal])
@@ -104,7 +102,7 @@
 
       #;(pretty-print code)
       #;(pretty-print exp)
-      (type-of exp (base-tenv) (base-renv) #f)
+      (type-of exp (base-tenv) #f)
       (value-of/k exp env (id-cont))))
 
   (: nullary-func [-> Symbol [-> Any] [-> DenVal * ExpVal]])

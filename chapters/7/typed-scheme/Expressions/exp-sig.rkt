@@ -9,5 +9,5 @@
   (
    [value-of/k        : [-> Exp Env Cont FinalAnswer]]
    [apply-procedure/k : [-> Proc (Listof DenVal) Cont FinalAnswer]]
-   [type-of           : [-> Exp TEnv REnv (Option Type) Type]]
+   [type-of           : [-> Exp TEnv (Option Type) Type]]
    ))
