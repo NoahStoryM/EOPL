@@ -71,8 +71,7 @@
   (define-type Tvar Symbol)
   (define-predicate tvar? Tvar)
 
-  (define-type Subst (Immutable-HashTable Symbol Type))
-  (define-predicate subst? Subst)
+  (define-type Subst (Mutable-HashTable Symbol Type))
 
   (define-type Prop (U 'Top 'Bot
                        Type (List '! Type)

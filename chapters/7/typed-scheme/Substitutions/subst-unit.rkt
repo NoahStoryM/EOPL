@@ -21,21 +21,16 @@
   (export subst^)
 
   (: empty-subst [-> Subst])
-  (define empty-subst (λ () #hasheq()))
+  (define empty-subst (λ () (make-hasheq)))
 
-  (: extend-subst [-> Subst Tvar Type Subst])
-  (define extend-subst
-    (λ (s tv t)
-      (hash-set
-       (for/hasheq : Subst ([(lhs rhs) (in-hash s)])
-         (values lhs (apply-one-subst rhs tv t)))
-       tv t)))
+  (: extend-subst! [-> Subst Tvar Type Subst])
+  (define extend-subst! (λ (s tv t) (begin0 s (hash-set! s tv t))))
 
-  (: safe-extend-subst [-> Subst Tvar Type Exp Subst])
-  (define safe-extend-subst
+  (: safe-extend-subst! [-> Subst Tvar Type Exp Subst])
+  (define safe-extend-subst!
     (λ (s t1 t2 exp)
       (if (no-occurrence? t1 t2)
-          (extend-subst s t1 t2)
+          (extend-subst! s t1 t2)
           (raise-no-occurrence-error t1 t2 exp))))
 
 
@@ -60,8 +55,8 @@
             [t2 (if (tvar? t2) (apply-subst-to-type t2 s) t2)])
         (match* (t1 t2)
           [(_ _) #:when (equal? t1 t2) s]
-          [((? tvar?) _) (safe-extend-subst s t1 t2 exp)]
-          [(_ (? tvar?)) (safe-extend-subst s t2 t1 exp)]
+          [((? tvar?) _) (safe-extend-subst! s t1 t2 exp)]
+          [(_ (? tvar?)) (safe-extend-subst! s t2 t1 exp)]
           [(`(Values ,ts1 ...)
             `(Values ,ts2 ...))
            (for/fold ([s : Subst s])
@@ -99,6 +94,9 @@
          `(Values ,@(map apply-t ts))]
         [`[-> ,I ,O : #:+ ,T #:- ,F]
          `[-> ,(apply-t I) ,(apply-t O) : #:+ ,T #:- ,F]]
-        [(? tvar?) (or (hash-ref s t #f) t)])))
+        [(? tvar?)
+         (define r (hash-ref s t #f))
+         (when r (extend-subst! s t (apply-subst-to-type r s)))
+         (or (hash-ref s t #f) t)])))
 
   )
